@@ -91,8 +91,11 @@ def list_skills() -> dict:
                     "has_skill_md": skill_md.exists(),
                     "has_zip": has_zip,
                     "files": [
-                        str(f.relative_to(entry))
-                        for f in entry.rglob("*")
+                        {
+                            "relative_path": str(f.relative_to(entry)),
+                            "content": f.read_text(encoding="utf-8", errors="replace"),
+                        }
+                        for f in sorted(entry.rglob("*"))
                         if f.is_file()
                     ],
                 })
