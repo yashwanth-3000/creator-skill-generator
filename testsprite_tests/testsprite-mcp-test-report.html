@@ -1238,10 +1238,9 @@ body {
             <li><span class="coverage-highlight">Key gaps / risks:</span>
             
               <ol>
-<li><strong>CrewAI Pipeline Timeout</strong>: Generation takes 60-120s. Cannot be tested via TestSprite cloud sandbox (30s timeout). Verified manually via curl with extended timeout.</li>
+<li><strong>CrewAI Pipeline Tests</strong>: Generation endpoint (<code>POST /api/generate-skill</code>) takes 60-120s, exceeding TestSprite's 30s tunnel timeout. Verified manually — works correctly. Consider async job processing for production.</li>
 <li><strong>No Authentication</strong>: All endpoints publicly accessible. Acceptable for MVP.</li>
-<li><strong>No Rate Limiting</strong>: AI pipeline is expensive, no protection against abuse.</li>
-<li><strong>Files List Format</strong>: <code>/api/skills</code> returns file paths as strings. Consider returning objects with <code>path</code> + <code>size</code> for richer metadata if needed.</li>
+<li><strong>No Rate Limiting</strong>: AI pipeline is expensive, no abuse protection yet.</li>
 </ol>
 <hr>
 
@@ -1276,7 +1275,7 @@ body {
         
 
             <div class="table-row">
-              <div class="table-cell"><span class="text-body">Requirement: Skill Listing</span></div>
+              <div class="table-cell"><span class="text-body">Requirement: Skill Listing & Preview</span></div>
               <div class="table-cell"><span class="text-body">0</span></div>
               <div class="table-cell"><span class="text-body">0</span></div>
               <div class="table-cell"><span class="text-body">0</span></div>
@@ -1355,7 +1354,7 @@ body {
           <div class="accordion-header" onclick="toggleAccordion(this)">
             <div class="requirement-content">
                                           <div class="requirement-title-row">
-              <h3 class="title-requirement">Requirement: Skill Listing</h3>
+              <h3 class="title-requirement">Requirement: Skill Listing & Preview</h3>
                 <div class="requirement-status-tag status-success">
               <svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="7.99961" cy="7.99998" r="6.4" fill="#10A363" fill-opacity="0.2"/>

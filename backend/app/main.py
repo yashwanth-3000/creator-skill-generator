@@ -3,9 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import get_settings
 from app.schemas import (
@@ -26,6 +27,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class PathTraversalGuard(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        raw = request.scope.get("path", "")
+        if ".." in raw:
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Invalid path"},
+            )
+        return await call_next(request)
+
+
+app.add_middleware(PathTraversalGuard)
 
 
 @app.get("/")
@@ -63,6 +78,8 @@ def export_zip(skill_name: str) -> FileResponse:
 @app.get("/api/export/{skill_name}/{file_path:path}")
 def export_file(skill_name: str, file_path: str) -> FileResponse:
     """Download a single file from a generated skill package."""
+    if ".." in file_path or file_path.startswith("/"):
+        raise HTTPException(status_code=400, detail="Invalid path")
     target = (settings.skill_output_dir / skill_name / file_path).resolve()
     skill_root = settings.skill_output_dir.resolve()
     if not str(target).startswith(str(skill_root)):
@@ -105,6 +122,8 @@ def list_skills() -> dict:
 @app.post("/api/export/copy")
 def copy_file_content(request: ExportFileRequest) -> JSONResponse:
     """Return raw file content for clipboard copy."""
+    if ".." in request.file_path or request.file_path.startswith("/"):
+        raise HTTPException(status_code=400, detail="Invalid path")
     target = (settings.skill_output_dir / request.skill_name / request.file_path).resolve()
     skill_root = settings.skill_output_dir.resolve()
     if not str(target).startswith(str(skill_root)):
