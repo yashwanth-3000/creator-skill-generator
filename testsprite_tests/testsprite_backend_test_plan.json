@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "post api generate skill with valid content",
+    "description": "Test POST /api/generate-skill with valid creator_content of at least 40 characters and optional parameters to verify successful skill package generation, response structure, and file contents."
+  },
+  {
+    "id": "TC002",
+    "title": "post api generate skill with short content",
+    "description": "Test POST /api/generate-skill with creator_content shorter than 40 characters to verify that the API returns a 422 validation error."
+  },
+  {
+    "id": "TC003",
+    "title": "post api generate skill with include zip and persist options false",
+    "description": "Test POST /api/generate-skill with include_zip and persist_to_disk set to false to verify the response contains null output_path and zip_path and generated files without persistence."
+  },
+  {
+    "id": "TC004",
+    "title": "post api generate skill with internal crewai failure",
+    "description": "Simulate internal CrewAI pipeline failure during POST /api/generate-skill and verify the API returns a 500 internal server error with error details."
+  },
+  {
+    "id": "TC005",
+    "title": "get api skills list generated skills",
+    "description": "Test GET /api/skills to verify it returns a 200 response with an array of generated skill packages including metadata such as skill name, presence of SKILL.md, zip availability, and file list."
+  },
+  {
+    "id": "TC006",
+    "title": "get api export skill zip download",
+    "description": "Test GET /api/export/{skill_name}/zip with an existing skill_name to verify the API returns a 200 response with a valid application/zip file stream for download."
+  },
+  {
+    "id": "TC007",
+    "title": "get api export skill zip not found",
+    "description": "Test GET /api/export/{skill_name}/zip with a non-existent skill_name to verify the API returns a 404 error indicating zip not found."
+  },
+  {
+    "id": "TC008",
+    "title": "get api export single file download",
+    "description": "Test GET /api/export/{skill_name}/{file_path} with valid skill_name and safe file_path to verify the API returns a 200 response with the file content and correct content type."
+  },
+  {
+    "id": "TC009",
+    "title": "get api export single file path traversal attempt",
+    "description": "Test GET /api/export/{skill_name}/{file_path} with a path traversal attempt in file_path to verify the API returns a 400 error indicating invalid path."
+  },
+  {
+    "id": "TC010",
+    "title": "post api export copy file content",
+    "description": "Test POST /api/export/copy with valid skill_name and file_path to verify the API returns a 200 response with the raw file content for clipboard copy."
+  }
+]

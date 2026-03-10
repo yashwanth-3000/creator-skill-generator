@@ -1,0 +1,11 @@
+{
+  "content_kind": "youtube-script",
+  "creator_name": "AEO Growth Creator",
+  "desired_skill_name": "aeo-content-optimizer",
+  "target_outcome": "turn repeated AEO advice into a reusable operational skill",
+  "audience": "content operators and SEO freelancers",
+  "include_openai_yaml": true,
+  "persist_to_disk": true,
+  "include_zip": true,
+  "creator_content": "A prompt asks for one answer. A skill is a job description for repeated work. For AEO, first confirm the target query, the AI platform, and the existing content. Then write a direct answer paragraph within the first 60 words, restructure the article with clear H2 and H3 sections, add FAQs, and improve citation readiness with specific numbers and source attribution. Do not invent data, do not give vague recommendations, and do not overdeliver beyond the requested workflow. Keep the main skill short and move bulky logic into references. Force an exact output format so the result is usable in production."
+}

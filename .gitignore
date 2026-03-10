@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# Environment
+.env
+backend/.env
+
+# Generated skills (output, not source)
+backend/generated_skills/
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+
+# OS
+.DS_Store
+
+# TestSprite temp files (keep test plans and reports, exclude secrets)
+testsprite_tests/tmp/config.json
+testsprite_tests/tmp/prd_files/
+
+# Lock files (large, reproducible)
+backend/uv.lock

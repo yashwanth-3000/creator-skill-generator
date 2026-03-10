@@ -1,0 +1,124 @@
+version: "2"
+type: backend
+tech_stack:
+  - python
+  - fastapi
+  - pydantic
+  - crewai
+  - uvicorn
+features:
+  - name: Skill Generation API
+    description: Generate AI skill packages from creator content using CrewAI multi-agent pipeline
+    files:
+      - backend/app/main.py
+      - backend/app/service.py
+      - backend/app/crew.py
+      - backend/app/schemas.py
+      - backend/app/storage.py
+    endpoints:
+      - method: POST
+        path: /api/generate-skill
+        description: Generate a complete skill package from creator content samples
+        auth_required: false
+        request_schema:
+          body:
+            creator_content: string (required, min 40 chars)
+            content_kind: string (default "generic")
+            creator_name: string (optional)
+            desired_skill_name: string (optional)
+            target_outcome: string (optional)
+            audience: string (optional)
+            include_openai_yaml: boolean (default true)
+            persist_to_disk: boolean (default true)
+            include_zip: boolean (default true)
+        response_schema:
+          "200":
+            skill_name: string
+            output_path: string or null
+            zip_path: string or null
+            files: GeneratedFile[]
+            warnings: string[]
+          "422": Validation error (missing or short creator_content)
+          "500": Internal server error
+    depends_on: []
+  - name: Export and Download
+    description: Download generated skill files, zip archives, and copy file content
+    files:
+      - backend/app/main.py
+      - backend/app/schemas.py
+    endpoints:
+      - method: GET
+        path: /api/export/{skill_name}/zip
+        description: Download the generated skill package as a zip file
+        auth_required: false
+        response_schema:
+          "200": application/zip file download
+          "404": Zip not found for given skill name
+      - method: GET
+        path: /api/export/{skill_name}/{file_path}
+        description: Download a single file from a generated skill package
+        auth_required: false
+        response_schema:
+          "200": text/markdown or text/plain file download
+          "400": Invalid path (path traversal attempt)
+          "404": File not found
+      - method: POST
+        path: /api/export/copy
+        description: Return raw file content for clipboard copy
+        auth_required: false
+        request_schema:
+          body:
+            skill_name: string (required)
+            file_path: string (required)
+        response_schema:
+          "200":
+            content: string
+            file_path: string
+          "400": Invalid path
+          "404": File not found
+      - method: GET
+        path: /api/skills
+        description: List all generated skill packages with their files
+        auth_required: false
+        response_schema:
+          "200":
+            skills: array of skill objects with name, has_skill_md, has_zip, files
+    depends_on:
+      - Skill Generation API
+  - name: Health Check
+    description: Simple health check endpoint for monitoring
+    files:
+      - backend/app/main.py
+    endpoints:
+      - method: GET
+        path: /api/health
+        description: Returns service health status
+        auth_required: false
+        response_schema:
+          "200":
+            status: string
+            service: string
+    depends_on: []
+  - name: Root Info
+    description: Root endpoint with usage information
+    files:
+      - backend/app/main.py
+    endpoints:
+      - method: GET
+        path: /
+        description: Returns message directing to the generate-skill endpoint
+        auth_required: false
+        response_schema:
+          "200":
+            message: string
+    depends_on: []
+known_limitations:
+  - issue: No rate limiting on any endpoint
+    location: backend/app/main.py
+    impact: API can be overwhelmed by concurrent requests
+  - issue: No authentication on any endpoint
+    location: backend/app/main.py
+    impact: Anyone can generate skills and consume API resources
+  - issue: CrewAI generation takes 60-120 seconds
+    location: backend/app/crew.py
+    impact: Clients need long timeouts; no async processing available

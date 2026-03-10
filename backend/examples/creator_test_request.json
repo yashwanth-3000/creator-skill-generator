@@ -1,0 +1,11 @@
+{
+  "content_kind": "youtube-script",
+  "creator_name": "Maya Growth Lab",
+  "desired_skill_name": "short-form-repurpose-engine",
+  "target_outcome": "turn a long-form creator script into reusable short-form content assets",
+  "audience": "content operators for creator-led brands",
+  "include_openai_yaml": true,
+  "persist_to_disk": true,
+  "include_zip": true,
+  "creator_content": "Here is the workflow I use every week for repurposing a YouTube video into shorts, tweets, and newsletter angles. First, identify the core promise of the video in one sentence. Then pull out 5 to 7 sharp moments that can stand alone without the full episode. For each moment, rewrite the opening so it lands in the first 2 seconds and sounds like a native short-form hook, not a clipped podcast sentence. Do not use generic hooks like stop scrolling or three tips. Use the creator's real point of view. Next, map each moment into three outputs: a 30 to 45 second short script, a tweet or thread starter, and a one-paragraph newsletter angle. Keep all outputs tied to the same central claim so the content system feels consistent. Do not invent stories, stats, or examples that were not in the source video. If context is missing, flag it. Keep the workflow strict, keep the output format exact, and avoid bloated explanations because my team needs assets they can publish fast."
+}
