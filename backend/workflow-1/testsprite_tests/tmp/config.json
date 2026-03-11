@@ -1,0 +1,26 @@
+{
+  "status": "init",
+  "scope": "codebase",
+  "type": "backend",
+  "localEndpoint": "http://localhost:8000/",
+  "serverPort": 62096,
+  "executionArgs": {
+    "projectName": "test-sprtie",
+    "projectPath": "/Users/yashwanthkrishna/Desktop/test-sprtie",
+    "testIds": [
+      "TC002",
+      "TC005",
+      "TC006",
+      "TC007",
+      "TC008",
+      "TC009",
+      "TC010"
+    ],
+    "additionalInstruction": "The backend runs on http://localhost:8000. No authentication required. IMPORTANT for TC009 path traversal test: HTTP clients normalize raw '../' before sending, so you MUST use URL-encoded traversal. Build the URL like this: url = f'{base_url}/api/export/active-recall-study-system/..%2F..%2F..%2Fetc%2Fpasswd' (use %2F not /). The server returns 400 with {detail: 'Invalid path'} for URL-encoded traversal. For TC005, /api/skills returns files as list of dicts with keys 'relative_path' (string) and 'content' (string). For TC006, use existing skill 'active-recall-study-system'. For TC008, download SKILL.md from 'active-recall-study-system'. For TC010, copy SKILL.md content from 'active-recall-study-system'. Health endpoint returns service name 'Creator Skill Backend'.",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-v2EbfgfRfkDjY5Y44VOeEUccldtpbWPaZ-RVRy_VBKxgjtjblR3lYnufHr5UG0qM261BWKOS0kN9d9HRD9zcKWAAIUvR-ZAHndi0SyRlP9KRi8WSw_UYC8ViM0XZd9F2vOs"
+    }
+  },
+  "proxy": "http://0015824a-b993-4b3b-8b07-aa04e92f2372:Wf6h6LCpBjOwkrSxMIB1n2tT6hbNZOBU@tun.testsprite.com:8080"
+}

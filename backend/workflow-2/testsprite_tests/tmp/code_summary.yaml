@@ -1,0 +1,190 @@
+version: "2"
+type: backend
+tech_stack:
+  - python
+  - fastapi
+  - pydantic
+  - crewai
+  - httpx
+  - youtube-transcript-api
+  - uvicorn
+features:
+  - name: Health Check
+    description: Returns service status and name
+    files:
+      - app/main.py
+    endpoints:
+      - method: GET
+        path: /api/health
+        description: Returns health status of the service
+        auth_required: false
+        response_schema:
+          "200": '{"status": "ok", "service": "Creator Skill Backend"}'
+    depends_on: []
+
+  - name: Root Info
+    description: Returns API usage information
+    files:
+      - app/main.py
+    endpoints:
+      - method: GET
+        path: /
+        description: Returns usage message pointing to /api/generate-skill
+        auth_required: false
+        response_schema:
+          "200": '{"message": "POST /api/generate-skill with creator content"}'
+    depends_on: []
+
+  - name: Generate Skill from Raw Content
+    description: Generate a skill package from pasted creator content via CrewAI pipeline
+    files:
+      - app/main.py
+      - app/schemas.py
+      - app/service.py
+      - app/crew.py
+      - app/storage.py
+    endpoints:
+      - method: POST
+        path: /api/generate-skill
+        description: Generate skill from raw creator content
+        auth_required: false
+        request_schema:
+          body:
+            creator_content: string (min 40 chars, required)
+            content_kind: string (default "generic")
+            creator_name: string (optional)
+            desired_skill_name: string (optional)
+            target_outcome: string (optional)
+            audience: string (optional)
+            include_openai_yaml: boolean (default true)
+            persist_to_disk: boolean (default true)
+            include_zip: boolean (default true)
+        response_schema:
+          "200": GenerateSkillResponse
+          "422": Validation error
+          "500": Internal server error
+    depends_on: []
+
+  - name: Generate Skill from Twitter
+    description: Fetch recent tweets for a user via X API v2 and generate a skill package
+    files:
+      - app/main.py
+      - app/schemas.py
+      - app/twitter_client.py
+      - app/config.py
+    endpoints:
+      - method: POST
+        path: /api/generate-skill/twitter
+        description: Fetch 25 recent tweets (excluding retweets) and generate skill
+        auth_required: false
+        request_schema:
+          body:
+            twitter_username: string (1-15 chars, required)
+            desired_skill_name: string (optional)
+            target_outcome: string (optional)
+            audience: string (optional)
+            include_openai_yaml: boolean (default true)
+            persist_to_disk: boolean (default true)
+            include_zip: boolean (default true)
+        response_schema:
+          "200": GenerateSkillResponse with source_metadata
+          "400": X_BEARER_TOKEN not configured or no tweets found
+          "422": Validation error
+          "502": X API error (auth, user not found, rate limit)
+          "500": Internal server error
+    depends_on:
+      - Health Check
+
+  - name: Generate Skill from YouTube
+    description: Extract YouTube video transcripts and generate a skill package
+    files:
+      - app/main.py
+      - app/schemas.py
+      - app/youtube_client.py
+    endpoints:
+      - method: POST
+        path: /api/generate-skill/youtube
+        description: Fetch transcripts from YouTube URLs and generate skill
+        auth_required: false
+        request_schema:
+          body:
+            youtube_urls: array of strings (min 1 URL, required)
+            desired_skill_name: string (optional)
+            target_outcome: string (optional)
+            audience: string (optional)
+            include_openai_yaml: boolean (default true)
+            persist_to_disk: boolean (default true)
+            include_zip: boolean (default true)
+        response_schema:
+          "200": GenerateSkillResponse with source_metadata and warnings
+          "400": No transcripts fetched or invalid URLs
+          "422": Validation error
+          "500": Internal server error
+    depends_on:
+      - Health Check
+
+  - name: List Generated Skills
+    description: List all generated skill packages with file contents
+    files:
+      - app/main.py
+    endpoints:
+      - method: GET
+        path: /api/skills
+        description: List all skill packages with files containing relative_path and content
+        auth_required: false
+        response_schema:
+          "200": '{"skills": [{"name": string, "has_skill_md": bool, "has_zip": bool, "files": [{"relative_path": string, "content": string}]}]}'
+    depends_on: []
+
+  - name: Export Skill Package
+    description: Download skill packages as zip or individual files, and copy file content
+    files:
+      - app/main.py
+      - app/schemas.py
+    endpoints:
+      - method: GET
+        path: /api/export/{skill_name}/zip
+        description: Download skill package as zip file
+        auth_required: false
+        response_schema:
+          "200": ZIP file download
+          "404": Zip not found
+      - method: GET
+        path: /api/export/{skill_name}/{file_path}
+        description: Download a single file from a skill package
+        auth_required: false
+        response_schema:
+          "200": File download
+          "400": Path traversal attempt
+          "404": File not found
+      - method: POST
+        path: /api/export/copy
+        description: Get raw file content for clipboard copy
+        auth_required: false
+        request_schema:
+          body:
+            skill_name: string (required)
+            file_path: string (required)
+        response_schema:
+          "200": '{"content": string, "file_path": string}'
+          "400": Path traversal attempt
+          "404": File not found
+    depends_on: []
+
+  - name: Security - Path Traversal Guard
+    description: Middleware that blocks requests containing .. in the path
+    files:
+      - app/main.py
+    endpoints: []
+    depends_on: []
+
+known_limitations:
+  - issue: CrewAI pipeline takes 60-180 seconds to complete, may cause client timeouts
+    location: app/service.py
+    impact: Long response times for skill generation endpoints
+  - issue: X API requires valid bearer token configured server-side
+    location: app/config.py
+    impact: Twitter endpoint returns 400 if X_BEARER_TOKEN not set in .env
+  - issue: YouTube transcripts depend on video having captions enabled
+    location: app/youtube_client.py
+    impact: Videos without captions are skipped with warnings

@@ -1,0 +1,26 @@
+{
+  "status": "init",
+  "scope": "codebase",
+  "type": "backend",
+  "localEndpoint": "http://localhost:8000/",
+  "executionArgs": {
+    "projectName": "deployed-backend",
+    "projectPath": "/Users/yashwanthkrishna/Desktop/test-sprtie/backend",
+    "testIds": [
+      "TC001",
+      "TC003",
+      "TC005",
+      "TC007",
+      "TC008",
+      "TC009",
+      "TC010"
+    ],
+    "additionalInstruction": "CRITICAL: DO NOT use localhost. The backend is deployed at https://creator-skill-backend-production.up.railway.app — use this as BASE_URL in ALL tests.\n\nTC001: GET /api/health — expect 200 with status=ok, service=Creator Skill Backend, version=1.0.0.\nTC003: POST /api/v1/generate-skill with body {\"creator_content\":\"short\"} — expect 422. Pydantic v2 error type is string_too_short, loc is [body, creator_content].\nTC005: POST /api/v2/generate-skill/twitter with body {\"twitter_username\":\"\"} — expect 422 because empty username fails min_length=1. This is fast validation, no API call is made.\nTC007: POST /api/v2/generate-skill/youtube with body {\"youtube_urls\":[]} — expect 422. Pydantic v2 error type is too_short NOT min_items.\nTC008: GET /api/v1/skills — expect 200 with skills array. Three skills exist on the deployed server: saas-pricing-strategy, naval-wisdom, mkbhd-review-style. Then GET /api/v1/skills/naval-wisdom — expect 200 with files array containing SKILL.md content.\nTC009: DELETE /api/v1/skills/nonexistent-skill-xyz — expect 404 with detail containing not found.\nTC010: GET /api/v1/export/..%2F..%2Fetc/passwd — expect 400 with detail=Invalid path. Use URL-encoded ..%2F to test path traversal.",
+    "serverMode": "production",
+    "envs": {
+      "API_KEY": "sk-user-v2EbfgfRfkDjY5Y44VOeEUccldtpbWPaZ-RVRy_VBKxgjtjblR3lYnufHr5UG0qM261BWKOS0kN9d9HRD9zcKWAAIUvR-ZAHndi0SyRlP9KRi8WSw_UYC8ViM0XZd9F2vOs"
+    }
+  },
+  "serverPort": 55365,
+  "proxy": "http://0389bd8c-8bc3-4436-bfe9-daff21668b21:7imAU2J7FsdRMVn2d0Zeq8KulPiboO4v@tun.testsprite.com:8080"
+}

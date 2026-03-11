@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "get health check status",
+    "description": "Test the GET /api/health endpoint to verify it returns a 200 status with the expected JSON body {status: 'ok', service: 'Creator Skill Backend'} when the service is healthy."
+  },
+  {
+    "id": "TC002",
+    "title": "get root usage message",
+    "description": "Test the GET / endpoint to verify it returns a 200 status with the JSON body {message: 'POST /api/generate-skill with creator content'} indicating usage instructions."
+  },
+  {
+    "id": "TC003",
+    "title": "post generate skill from raw content valid",
+    "description": "Test the POST /api/generate-skill endpoint with valid pasted creator content (at least 40 characters) and optional parameters to verify it returns a 200 status with a GenerateSkillResponse containing skill files and metadata."
+  },
+  {
+    "id": "TC004",
+    "title": "post generate skill from raw content validation error",
+    "description": "Test the POST /api/generate-skill endpoint with creator_content shorter than 40 characters to verify it returns a 422 validation error."
+  },
+  {
+    "id": "TC005",
+    "title": "post generate skill from twitter valid",
+    "description": "Test the POST /api/generate-skill/twitter endpoint with a valid twitter_username (with or without leading '@') and optional parameters to verify it returns a 200 status with GenerateSkillResponse and source_metadata including twitter_username, tweet_count, and tweet_ids."
+  },
+  {
+    "id": "TC006",
+    "title": "post generate skill from twitter missing bearer token",
+    "description": "Test the POST /api/generate-skill/twitter endpoint when the server is missing the X_BEARER_TOKEN configuration to verify it returns a 400 error with message 'X_BEARER_TOKEN not configured'."
+  },
+  {
+    "id": "TC007",
+    "title": "post generate skill from twitter user not found",
+    "description": "Test the POST /api/generate-skill/twitter endpoint with a non-existent twitter_username to verify it returns a 502 error indicating an upstream X API error such as user not found or rate limit exceeded."
+  },
+  {
+    "id": "TC008",
+    "title": "post generate skill from youtube valid",
+    "description": "Test the POST /api/generate-skill/youtube endpoint with one or more valid YouTube URLs to verify it returns a 200 status with GenerateSkillResponse, source_metadata including video_count and video_ids, and warnings for any videos without captions."
+  },
+  {
+    "id": "TC009",
+    "title": "get list generated skills",
+    "description": "Test the GET /api/skills endpoint to verify it returns a 200 status with a list of generated skill packages including their names, flags for skill markdown and zip presence, and file entries with relative paths and content."
+  },
+  {
+    "id": "TC010",
+    "title": "get export skill package zip",
+    "description": "Test the GET /api/export/{skill_name}/zip endpoint to verify it returns a 200 status with a ZIP file download for an existing skill package, and a 404 error if the zip file is not found."
+  }
+]

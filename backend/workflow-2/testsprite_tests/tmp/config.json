@@ -1,0 +1,26 @@
+{
+  "status": "init",
+  "scope": "codebase",
+  "type": "backend",
+  "localEndpoint": "http://localhost:8001/",
+  "serverPort": 53262,
+  "executionArgs": {
+    "projectName": "workflow-2",
+    "projectPath": "/Users/yashwanthkrishna/Desktop/test-sprtie/backend/workflow-2",
+    "testIds": [
+      "TC001",
+      "TC002",
+      "TC004",
+      "TC006",
+      "TC007",
+      "TC009",
+      "TC010"
+    ],
+    "additionalInstruction": "Server runs on port 8001. CRITICAL: Every test MUST complete in under 5 seconds. Do NOT call POST /api/generate-skill, POST /api/generate-skill/twitter with a REAL username, or POST /api/generate-skill/youtube in ANY test. These endpoints invoke a CrewAI AI pipeline that takes 2-3 minutes and WILL timeout.\n\nTC001: GET /api/health — expect 200, body has status=ok and service=Creator Skill Backend.\nTC002: GET / — expect 200, body has message field.\nTC004: POST /api/generate-skill with body {\"creator_content\":\"short\"} — expect 422. Uses Pydantic v2 so error type is string_too_short NOT value_error.any_str.min_length. loc is [body, creator_content].\nTC006: POST /api/generate-skill/twitter with body {\"twitter_username\":\"\"} — expect 422 because empty username fails min_length=1 validation. This is fast, no API call is made. Do NOT use a real username like exampleuser.\nTC007: POST /api/generate-skill/twitter with body {\"twitter_username\":\"xyznotreal999999\"} — expect 502. Username exceeds 15 chars so expect 422 instead. Alternatively use {\"twitter_username\":\"zzznotreal99\"} (under 15 chars) — expect 502 with detail containing not found.\nTC009: GET /api/skills — expect 200 with skills array. Existing skill mkbhd-twitter-voice exists.\nTC010: GET /api/export/mkbhd-twitter-voice/zip — expect 200 ZIP file. GET /api/export/nonexistent/zip — expect 404. Do NOT create a skill first.",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-v2EbfgfRfkDjY5Y44VOeEUccldtpbWPaZ-RVRy_VBKxgjtjblR3lYnufHr5UG0qM261BWKOS0kN9d9HRD9zcKWAAIUvR-ZAHndi0SyRlP9KRi8WSw_UYC8ViM0XZd9F2vOs"
+    }
+  },
+  "proxy": "http://fdd900ea-459a-4207-b037-85d3dd3173ab:FSsZLy6GtS5kCOTQlIN7T7g2LkYcfKRv@tun.testsprite.com:8080"
+}

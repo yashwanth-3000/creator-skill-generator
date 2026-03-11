@@ -1,16 +1,29 @@
 # Python
-__pycache__/
-*.pyc
-*.pyo
-.venv/
-*.egg-info/
-.pytest_cache/
+**/__pycache__/
+**/*.py[cod]
+**/.venv/
+**/*.egg-info/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.coverage
+**/htmlcov/
+
+# Node / Next.js
+**/node_modules/
+**/.next/
+**/coverage/
+**/*.tsbuildinfo
 
 # Environment
 .env
+.env.*
+!.env.example
+!**/.env.example
 
 # Generated skills (output, not source)
-**/generated_skills/
+**/generated_skills/**
+!**/generated_skills/.gitkeep
 
 # IDE
 .vscode/
@@ -19,10 +32,6 @@ __pycache__/
 
 # OS
 .DS_Store
-
-# TestSprite temp files (keep test plans and reports, exclude secrets)
-**/testsprite_tests/tmp/config.json
-**/testsprite_tests/tmp/prd_files/
 
 # Lock files (large, reproducible)
 **/uv.lock

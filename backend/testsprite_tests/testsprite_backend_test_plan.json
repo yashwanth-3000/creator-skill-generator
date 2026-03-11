@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "test_health_check_endpoint_returns_status_ok",
+    "description": "Verify that GET /api/health returns a 200 status code with a JSON body containing {\"status\":\"ok\"} indicating the service is healthy."
+  },
+  {
+    "id": "TC002",
+    "title": "test_v1_generate_skill_with_valid_content",
+    "description": "Test POST /api/v1/generate-skill with valid creator_content of at least 40 characters and optional parameters, expecting a 200 response with GenerateSkillResponse including skill_name and zip path."
+  },
+  {
+    "id": "TC003",
+    "title": "test_v1_generate_skill_with_short_content",
+    "description": "Test POST /api/v1/generate-skill with creator_content shorter than 40 characters, expecting a 422 Pydantic validation error indicating string_too_short."
+  },
+  {
+    "id": "TC004",
+    "title": "test_v2_generate_skill_twitter_with_valid_username_and_token",
+    "description": "Test POST /api/v2/generate-skill/twitter with a valid twitter_username and configured X_BEARER_TOKEN, expecting a 200 response with GenerateSkillResponse including skill_name and source_metadata."
+  },
+  {
+    "id": "TC005",
+    "title": "test_v2_generate_skill_twitter_without_bearer_token",
+    "description": "Test POST /api/v2/generate-skill/twitter with a valid twitter_username but without X_BEARER_TOKEN configured, expecting a 400 error indicating token not configured or no tweets found."
+  },
+  {
+    "id": "TC006",
+    "title": "test_v2_generate_skill_youtube_with_valid_urls",
+    "description": "Test POST /api/v2/generate-skill/youtube with a list of valid YouTube URLs, expecting a 200 response with GenerateSkillResponse including skill_name, source_metadata, and possible warnings for partial transcripts."
+  },
+  {
+    "id": "TC007",
+    "title": "test_v2_generate_skill_youtube_with_empty_url_list",
+    "description": "Test POST /api/v2/generate-skill/youtube with an empty list of youtube_urls, expecting a 422 Pydantic validation error due to minimum items constraint."
+  },
+  {
+    "id": "TC008",
+    "title": "test_get_skill_detail_for_existing_skill",
+    "description": "Test GET /api/v1/skills/{skill_name} for an existing skill, expecting a 200 response with SkillDetail including files and their contents."
+  },
+  {
+    "id": "TC009",
+    "title": "test_delete_skill_and_verify_removal",
+    "description": "Test DELETE /api/v1/skills/{skill_name} to delete a skill, expecting a 200 confirmation, and subsequent GET /api/v1/skills/{skill_name} returns 404 indicating skill not found."
+  },
+  {
+    "id": "TC010",
+    "title": "test_export_single_file_with_path_traversal_attempt",
+    "description": "Test GET /api/v1/export/{skill_name}/{file_path} with a file_path containing '..' to verify the middleware blocks path traversal attempts and returns a 400 Invalid path error."
+  }
+]
