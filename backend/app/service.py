@@ -8,6 +8,8 @@ from collections.abc import AsyncGenerator
 from queue import Empty, Queue
 from threading import Thread
 
+import logging
+
 from app.config import Settings
 from app.crew import SkillCrewRunner
 from app.schemas import (
@@ -16,6 +18,9 @@ from app.schemas import (
     GeneratedFile,
 )
 from app.storage import SkillStorageService
+from app.supabase_store import SupabaseSkillStore
+
+logger = logging.getLogger(__name__)
 
 
 class SkillGenerationService:
@@ -26,6 +31,12 @@ class SkillGenerationService:
             model=settings.crewai_model,
             verbose=settings.crewai_verbose,
         )
+        self.db: SupabaseSkillStore | None = None
+        if settings.supabase_url and settings.supabase_service_role_key:
+            self.db = SupabaseSkillStore(settings.supabase_url, settings.supabase_service_role_key)
+            logger.info("Supabase store enabled")
+        else:
+            logger.warning("Supabase env vars missing — skills will NOT be saved to database")
 
     def generate(self, request: GenerateSkillRequest) -> GenerateSkillResponse:
         raw_name, files = self.crew.run(request)
@@ -40,13 +51,15 @@ class SkillGenerationService:
                 skill_name, files, include_zip=request.include_zip,
             )
 
-        return GenerateSkillResponse(
+        response = GenerateSkillResponse(
             skill_name=skill_name,
             output_path=output_path,
             zip_path=zip_path,
             files=files,
             warnings=warnings,
         )
+        self._save_to_supabase(response, request)
+        return response
 
     async def generate_streaming(
         self, request: GenerateSkillRequest,
@@ -111,9 +124,36 @@ class SkillGenerationService:
                 files=files,
                 warnings=warnings,
             )
+            self._save_to_supabase(response, request)
             yield f"event: result\ndata: {response.model_dump_json()}\n\n"
 
         yield "event: done\ndata: {}\n\n"
+
+    # ------------------------------------------------------------------
+    # Supabase persistence
+    # ------------------------------------------------------------------
+
+    def _save_to_supabase(
+        self,
+        response: GenerateSkillResponse,
+        request: GenerateSkillRequest,
+    ) -> None:
+        if not self.db:
+            return
+        kind = request.content_kind
+        source_mode = (
+            "twitter" if kind == "twitter-threads"
+            else "youtube" if kind == "youtube-script"
+            else "raw"
+        )
+        source_metadata: dict = {"content_kind": kind}
+        if request.creator_name:
+            source_metadata["creator_name"] = request.creator_name
+        if request.desired_skill_name:
+            source_metadata["desired_skill_name"] = request.desired_skill_name
+        if request.audience:
+            source_metadata["audience"] = request.audience
+        self.db.save_skill(response, source_mode=source_mode, source_metadata=source_metadata)
 
     # ------------------------------------------------------------------
     # Post-processing

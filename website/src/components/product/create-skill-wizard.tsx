@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./create-skill-wizard.module.css";
 import viewerStyles from "./skill-viewer.module.css";
 import { SkillViewer } from "./skill-viewer";
-import { fetchHealth, generateSkill, fileDownloadUrl, zipDownloadUrl } from "@/lib/frontend-api";
+import { fetchHealth, fileDownloadUrl, zipDownloadUrl } from "@/lib/frontend-api";
 import type { GenerateMode, GenerateSkillResponse } from "@/lib/backend-types";
 
 type LogEntry = {
@@ -65,6 +65,33 @@ function labelText(type: string): string {
     case "error":      return "ERROR";
     default:           return "INFO";
   }
+}
+
+function formatLogMessage(event: Record<string, unknown>): string {
+  const t = event.type as string;
+  if (t === "crew_start") {
+    const names = event.task_names as string[] | undefined;
+    return names
+      ? `Crew started — ${names.length} tasks: ${names.join(" → ")}`
+      : "Crew started — generating skill bundle";
+  }
+  if (t === "task_start") return `Starting: ${event.name}`;
+  if (t === "step") return String(event.output ?? "");
+  if (t === "task_done") {
+    const summary = String(event.summary ?? "");
+    return summary ? `Completed: ${event.name} — ${summary}` : `Completed: ${event.name}`;
+  }
+  if (t === "crew_done") return "All tasks complete — finalizing result";
+  if (t === "error") return `Error: ${event.message ?? event.error ?? "Unknown"}`;
+  return JSON.stringify(event);
+}
+
+const API_ROOT = "/api/backend";
+
+function streamUrl(mode: GenerateMode): string {
+  if (mode === "raw") return `${API_ROOT}/v2/generate-skill/stream`;
+  if (mode === "twitter") return `${API_ROOT}/v2/generate-skill/twitter/stream`;
+  return `${API_ROOT}/v2/generate-skill/youtube/stream`;
 }
 
 type FormState = {
@@ -184,11 +211,11 @@ export function CreateSkillWizard() {
   const [taskStatuses, setTaskStatuses] = useState<TaskStatus[]>(PIPELINE_TASKS.map(() => "pending"));
   const [elapsed, setElapsed] = useState(0);
   const [genStatus, setGenStatus] = useState<"idle" | "running" | "done" | "error">("idle");
-  const [isPending, startTransition] = useTransition();
 
   const termRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logIdRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
 
   const scrollToBottom = useCallback(() => {
     const el = termRef.current;
@@ -200,6 +227,13 @@ export function CreateSkillWizard() {
   }, []);
 
   useEffect(() => { scrollToBottom(); }, [logs, scrollToBottom]);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   const selectedSource = sources.find((s) => s.value === mode);
   const metadataEntries = Object.entries(result?.source_metadata ?? {}).filter(
@@ -231,22 +265,131 @@ export function CreateSkillWizard() {
     return form.youtubeUrls.trim().length > 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!mode || !isInputValid()) return;
-    setError(null);
+    if (!mode || !isInputValid() || genStatus === "running") return;
 
-    startTransition(async () => {
-      try {
-        const res = await generateSkill(mode, buildPayload(mode, form));
-        setResult(res);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Generation failed.");
+    setError(null);
+    setResult(null);
+    setLogs([]);
+    setTaskStatuses(PIPELINE_TASKS.map(() => "pending"));
+    setElapsed(0);
+    setGenStatus("running");
+    logIdRef.current = 0;
+
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const res = await fetch(streamUrl(mode), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildPayload(mode, form)),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        let msg = errText;
+        try {
+          const parsed = JSON.parse(errText) as { detail?: string };
+          if (parsed.detail) msg = parsed.detail;
+        } catch { /* use raw text */ }
+        setError(msg);
+        setGenStatus("error");
+        if (timerRef.current) clearInterval(timerRef.current);
+        return;
       }
-    });
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        let eventType = "log";
+        for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith("data: ")) {
+            const jsonStr = line.slice(6);
+            if (eventType === "ping") { eventType = "log"; continue; }
+            try {
+              const data = JSON.parse(jsonStr) as Record<string, unknown>;
+
+              if (eventType === "done") {
+                setGenStatus("done");
+                eventType = "log";
+                continue;
+              }
+
+              if (eventType === "result") {
+                const skillResult: GenerateSkillResponse = {
+                  skill_name: String(data.skill_name ?? ""),
+                  files: (data.files as GenerateSkillResponse["files"]) ?? [],
+                  warnings: (data.warnings as string[]) ?? [],
+                  output_path: data.output_path as string | undefined,
+                  zip_path: data.zip_path as string | undefined,
+                  source_metadata: data.source_metadata as Record<string, unknown> | undefined,
+                };
+                setResult(skillResult);
+                addLog("result", `Skill "${skillResult.skill_name}" generated with ${skillResult.files.length} files`, (Date.now() - startTime) / 1000);
+                eventType = "log";
+                continue;
+              }
+
+              if (eventType === "error") {
+                const msg = String(data.message ?? data.error ?? "Unknown error");
+                addLog("error", msg, (Date.now() - startTime) / 1000);
+                setError(msg);
+                setGenStatus("error");
+                eventType = "log";
+                continue;
+              }
+
+              const evtType = (data.type ?? eventType) as string;
+              const elapsedSec = typeof data.elapsed === "number" ? data.elapsed : (Date.now() - startTime) / 1000;
+              addLog(evtType, formatLogMessage(data), elapsedSec);
+
+              if (evtType === "task_start") {
+                const idx = data.index as number;
+                setTaskStatuses((prev) => prev.map((s, i) => (i === idx ? "active" : s)));
+              } else if (evtType === "task_done") {
+                const idx = data.index as number;
+                setTaskStatuses((prev) => prev.map((s, i) => (i === idx ? "done" : s)));
+              }
+            } catch { /* skip malformed JSON */ }
+            eventType = "log";
+          }
+        }
+      }
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        const msg = err instanceof Error ? err.message : "Generation failed.";
+        setError(msg);
+        setGenStatus("error");
+      }
+    } finally {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setGenStatus((prev) => (prev === "running" ? "done" : prev));
+    }
   }
 
   function handleReset() {
+    abortRef.current?.abort();
     setForm(initialForm);
     setResult(null);
     setError(null);
@@ -288,7 +431,7 @@ export function CreateSkillWizard() {
     { delay: 800,  fn: (e: number) => { addLog("result", `Skill "paul-graham-thinking" generated with 3 files`, e); } },
   ];
 
-  function handleLoadTestData() {
+  async function handleLoadTestData() {
     setMode("raw");
     setForm({
       ...initialForm,
@@ -299,6 +442,7 @@ export function CreateSkillWizard() {
       audience: "Startup founders and product builders",
     });
     setError(null);
+    setResult(null);
     setLogs([]);
     setTaskStatuses(PIPELINE_TASKS.map(() => "pending"));
     setElapsed(0);
@@ -310,15 +454,14 @@ export function CreateSkillWizard() {
       setElapsed(Math.floor((Date.now() - startTime) / 1000));
     }, 1000);
 
-    startTransition(async () => {
-      for (const step of TEST_SEQUENCE) {
-        await new Promise((r) => setTimeout(r, step.delay));
-        step.fn(Math.floor((Date.now() - startTime) / 1000));
-      }
-      await new Promise((r) => setTimeout(r, 800));
-      if (timerRef.current) clearInterval(timerRef.current);
-      setGenStatus("done");
-      setResult({
+    for (const step of TEST_SEQUENCE) {
+      await new Promise((r) => setTimeout(r, step.delay));
+      step.fn(Math.floor((Date.now() - startTime) / 1000));
+    }
+    await new Promise((r) => setTimeout(r, 800));
+    if (timerRef.current) clearInterval(timerRef.current);
+    setGenStatus("done");
+    setResult({
       skill_name: "paul-graham-thinking",
       files: [
         {
@@ -424,7 +567,6 @@ paths:
         word_count: 312,
         files_generated: 3,
       },
-      });
     });
   }
 
@@ -520,8 +662,8 @@ paths:
         </section>
       )}
 
-      {/* Terminal logs — shown during test UI generation */}
-      {isPending && genStatus === "running" && (
+      {/* Terminal logs — shown during generation */}
+      {genStatus === "running" && (
         <div className={styles.terminalWrapper}>
           <div className={styles.terminal}>
             <div className={styles.terminalHeader}>
@@ -554,7 +696,12 @@ paths:
               <p className={styles.termSidebarLabel}>Status</p>
               <div className={styles.elapsedTime}>{formatElapsed(elapsed)}</div>
               <div className={styles.elapsedLabel}>elapsed</div>
-              <div className={`${styles.statusBadge} ${styles.statusRunning}`}>Running</div>
+              <div className={`${styles.statusBadge} ${
+                genStatus === "running" ? styles.statusRunning :
+                genStatus === "done" ? styles.statusDone : styles.statusRunning
+              }`}>
+                {genStatus === "running" ? "Running" : genStatus === "done" ? "Complete" : "Running"}
+              </div>
             </div>
 
             <div className={styles.termSidebarCard}>
@@ -579,7 +726,7 @@ paths:
       )}
 
       {/* Page header — hidden when results or logs are showing */}
-      {!result && !isPending && <div className={styles.header}>
+      {!result && genStatus !== "running" && <div className={styles.header}>
         <p className={styles.kicker}>New skill</p>
         <h1 className={styles.title}>Create a skill</h1>
         <p className={styles.subtitle}>
@@ -588,7 +735,7 @@ paths:
       </div>}
 
       {/* Source picker */}
-      {!result && !isPending && <section className={styles.sourceSection}>
+      {!result && genStatus !== "running" && <section className={styles.sourceSection}>
         <p className={styles.sectionLabel}>Where is your content?</p>
         <div className={styles.sourceGrid}>
           {sources.map((src) => (
@@ -614,7 +761,7 @@ paths:
       </section>}
 
       {/* Progressive form */}
-      {!result && !isPending && mode && (
+      {!result && genStatus !== "running" && mode && (
         <form className={styles.form} onSubmit={handleSubmit}>
           {/* Content input */}
           <section className={styles.formSection}>
@@ -753,21 +900,12 @@ paths:
             <button
               type="submit"
               className={styles.generateButton}
-              disabled={isPending || !isInputValid()}
+              disabled={!isInputValid()}
             >
-              {isPending ? (
-                <>
-                  <span className={styles.spinner} aria-hidden="true" />
-                  Generating skill…
-                </>
-              ) : (
-                <>
-                  Generate skill
-                  <span className={styles.arrowIcon} aria-hidden="true">
-                    →
-                  </span>
-                </>
-              )}
+              Generate skill
+              <span className={styles.arrowIcon} aria-hidden="true">
+                →
+              </span>
             </button>
 
             <button type="button" className={styles.resetButton} onClick={handleReset}>

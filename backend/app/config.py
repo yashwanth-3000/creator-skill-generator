@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     x_bearer_token: str | None = None
     skill_output_dir: Path = Field(default_factory=lambda: BASE_DIR / "generated_skills")
+    supabase_url: str | None = None
+    supabase_service_role_key: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",

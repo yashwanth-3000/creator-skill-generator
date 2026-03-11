@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useDeferredValue, useEffect, useState, useTransition } from "react";
 import styles from "./skills-browser.module.css";
-import { listSkills, zipDownloadUrl } from "@/lib/frontend-api";
-import type { SkillSummary } from "@/lib/backend-types";
+import { zipDownloadUrl } from "@/lib/frontend-api";
+import { fetchSkillsFromSupabase, type SkillRow } from "@/lib/supabase";
 
 export function SkillsBrowser() {
-  const [skills, setSkills] = useState<SkillSummary[]>([]);
+  const [skills, setSkills] = useState<SkillRow[]>([]);
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, startTransition] = useTransition();
@@ -16,13 +16,13 @@ export function SkillsBrowser() {
   useEffect(() => {
     startTransition(async () => {
       try {
-        const response = await listSkills();
-        setSkills(response.skills);
+        const rows = await fetchSkillsFromSupabase();
+        setSkills(rows);
       } catch (refreshError) {
         const detail =
           refreshError instanceof Error
             ? refreshError.message
-            : "Unable to load skills from the backend.";
+            : "Unable to load skills.";
         setError(detail);
       }
     });
@@ -33,13 +33,13 @@ export function SkillsBrowser() {
 
     startTransition(async () => {
       try {
-        const response = await listSkills();
-        setSkills(response.skills);
+        const rows = await fetchSkillsFromSupabase();
+        setSkills(rows);
       } catch (refreshError) {
         const detail =
           refreshError instanceof Error
             ? refreshError.message
-            : "Unable to load skills from the backend.";
+            : "Unable to load skills.";
         setError(detail);
       }
     });
@@ -50,8 +50,8 @@ export function SkillsBrowser() {
     if (!needle) return true;
 
     return (
-      skill.name.toLowerCase().includes(needle) ||
-      skill.files.some((file) => file.relative_path.toLowerCase().includes(needle))
+      skill.skill_name.toLowerCase().includes(needle) ||
+      (skill.description ?? "").toLowerCase().includes(needle)
     );
   });
 
@@ -87,44 +87,43 @@ export function SkillsBrowser() {
             <p>{deferredQuery.trim() ? "No matching saved skills." : "No saved skills yet."}</p>
             <span>
               {deferredQuery.trim()
-                ? "Try a different skill name or file path."
-                : "Persisted backend output will appear here."}
+                ? "Try a different skill name or description."
+                : "Generated skills will appear here automatically."}
             </span>
           </div>
         ) : (
           filteredSkills.map((skill) => (
-            <article key={skill.name} className={styles.card}>
+            <article key={skill.id} className={styles.card}>
               <div className={styles.cardTop}>
                 <div>
-                  <h2>{skill.name}</h2>
+                  <h2>{skill.display_name || skill.skill_name}</h2>
                   <p>
                     {skill.file_count} files
                     {skill.has_zip ? " · zip ready" : ""}
+                    {" · "}
+                    {skill.source_mode}
                   </p>
                 </div>
                 <span className={styles.cardBadge}>
-                  {skill.has_skill_md ? "SKILL.md" : "No SKILL.md"}
+                  {skill.source_mode === "twitter" ? "X / Twitter" :
+                   skill.source_mode === "youtube" ? "YouTube" : "Raw paste"}
                 </span>
               </div>
 
-              <div className={styles.fileList}>
-                {skill.files.slice(0, 4).map((file) => (
-                  <div key={file.relative_path} className={styles.fileItem}>
-                    <span>{file.relative_path}</span>
-                    <small>{Math.max(1, Math.round(file.size_bytes / 1024))} KB</small>
-                  </div>
-                ))}
-                {skill.file_count > 4 && (
-                  <p className={styles.fileOverflow}>+{skill.file_count - 4} more files</p>
-                )}
+              {skill.description && (
+                <p className={styles.cardDescription}>{skill.description}</p>
+              )}
+
+              <div className={styles.cardMeta}>
+                <span>{new Date(skill.created_at).toLocaleDateString()}</span>
               </div>
 
               <div className={styles.cardActions}>
-                <Link className={styles.primaryAction} href={`/skills/${skill.name}`}>
+                <Link className={styles.primaryAction} href={`/skills/${skill.skill_name}`}>
                   Open detail
                 </Link>
                 {skill.has_zip && (
-                  <a className={styles.secondaryAction} href={zipDownloadUrl(skill.name)}>
+                  <a className={styles.secondaryAction} href={zipDownloadUrl(skill.skill_name)}>
                     Download zip
                   </a>
                 )}
