@@ -4,13 +4,13 @@ __pycache__/
 *.pyo
 .venv/
 *.egg-info/
+.pytest_cache/
 
 # Environment
 .env
-backend/.env
 
 # Generated skills (output, not source)
-backend/generated_skills/
+**/generated_skills/
 
 # IDE
 .vscode/
@@ -21,8 +21,8 @@ backend/generated_skills/
 .DS_Store
 
 # TestSprite temp files (keep test plans and reports, exclude secrets)
-testsprite_tests/tmp/config.json
-testsprite_tests/tmp/prd_files/
+**/testsprite_tests/tmp/config.json
+**/testsprite_tests/tmp/prd_files/
 
 # Lock files (large, reproducible)
-backend/uv.lock
+**/uv.lock
