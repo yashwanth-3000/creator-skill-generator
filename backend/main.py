@@ -7,6 +7,7 @@ from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import StreamingResponse
 
 from app.config import get_settings
 from app.schemas import (
@@ -161,6 +162,85 @@ def _generate_skill_from_twitter(request: TwitterSkillRequest):
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+def _sse_response(service: SkillGenerationService, gen_request: GenerateSkillRequest):
+    """Wrap generate_streaming in a StreamingResponse."""
+    async def event_stream():
+        async for chunk in service.generate_streaming(gen_request):
+            yield chunk
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+async def _stream_generate_skill(request: GenerateSkillRequest):
+    """SSE endpoint: streams real-time progress events during raw-paste skill generation."""
+    return _sse_response(_build_service(), request)
+
+
+async def _stream_generate_skill_from_twitter(request: TwitterSkillRequest):
+    """SSE endpoint: streams real-time progress events during Twitter skill generation."""
+    if not settings.x_bearer_token:
+        raise HTTPException(
+            status_code=400,
+            detail="X_BEARER_TOKEN is not configured on the server",
+        )
+    try:
+        tweet_text, metadata = fetch_tweets(
+            username=request.twitter_username,
+            bearer_token=settings.x_bearer_token,
+        )
+    except XApiError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    if not tweet_text:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No tweets found for @{request.twitter_username}",
+        )
+
+    gen_request = GenerateSkillRequest(
+        creator_content=tweet_text,
+        content_kind="twitter-threads",
+        creator_name=request.twitter_username,
+        desired_skill_name=request.desired_skill_name,
+        target_outcome=request.target_outcome,
+        audience=request.audience,
+        include_openai_yaml=request.include_openai_yaml,
+        persist_to_disk=request.persist_to_disk,
+        include_zip=request.include_zip,
+    )
+
+    return _sse_response(_build_service(), gen_request)
+
+
+async def _stream_generate_skill_from_youtube(request: YouTubeSkillRequest):
+    """SSE endpoint: streams real-time progress events during YouTube skill generation."""
+    try:
+        transcript_text, metadata, warnings = fetch_transcripts(request.youtube_urls)
+    except YouTubeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    gen_request = GenerateSkillRequest(
+        creator_content=transcript_text,
+        content_kind="youtube-script",
+        desired_skill_name=request.desired_skill_name,
+        target_outcome=request.target_outcome,
+        audience=request.audience,
+        include_openai_yaml=request.include_openai_yaml,
+        persist_to_disk=request.persist_to_disk,
+        include_zip=request.include_zip,
+    )
+
+    return _sse_response(_build_service(), gen_request)
+
+
 def _generate_skill_from_youtube(request: YouTubeSkillRequest):
     try:
         transcript_text, metadata, warnings = fetch_transcripts(request.youtube_urls)
@@ -298,6 +378,12 @@ v1.add_api_route(
     description="Paste raw creator content (min 40 chars). CrewAI analyzes patterns and generates a full SKILL.md package.",
 )
 v1.add_api_route(
+    "/generate-skill/stream", _stream_generate_skill,
+    methods=["POST"],
+    summary="Generate skill from pasted content (SSE stream)",
+    description="Same as /generate-skill but streams real-time progress events via Server-Sent Events.",
+)
+v1.add_api_route(
     "/skills", _list_skills,
     methods=["GET"],
     summary="List all generated skills",
@@ -346,16 +432,33 @@ v2.add_api_route(
     summary="Generate skill from pasted content",
 )
 v2.add_api_route(
+    "/generate-skill/stream", _stream_generate_skill,
+    methods=["POST"],
+    summary="Generate skill from pasted content (SSE stream)",
+)
+v2.add_api_route(
     "/generate-skill/twitter", _generate_skill_from_twitter,
     methods=["POST"], response_model=GenerateSkillResponse,
     summary="Generate skill from Twitter/X user",
     description="Fetches the last 25 original tweets (no retweets) for the given username and generates a skill from them. Requires X_BEARER_TOKEN on the server.",
 )
 v2.add_api_route(
+    "/generate-skill/twitter/stream", _stream_generate_skill_from_twitter,
+    methods=["POST"],
+    summary="Generate skill from Twitter/X user (SSE stream)",
+    description="Same as /twitter but streams real-time progress events via Server-Sent Events.",
+)
+v2.add_api_route(
     "/generate-skill/youtube", _generate_skill_from_youtube,
     methods=["POST"], response_model=GenerateSkillResponse,
     summary="Generate skill from YouTube videos",
     description="Fetches transcripts from the provided YouTube URLs and generates a skill from the combined transcript text.",
+)
+v2.add_api_route(
+    "/generate-skill/youtube/stream", _stream_generate_skill_from_youtube,
+    methods=["POST"],
+    summary="Generate skill from YouTube videos (SSE stream)",
+    description="Same as /youtube but streams real-time progress events via Server-Sent Events.",
 )
 v2.add_api_route(
     "/skills", _list_skills,

@@ -1,0 +1,151 @@
+.page {
+  --token-bg: #ffffff;
+  --token-ink: #0d1221;
+  --token-copy: #37373d;
+  --token-accent: #f75c30;
+  --token-shell: #161425;
+  position: relative;
+  min-height: 100vh;
+  background: var(--token-bg);
+  color: var(--token-ink);
+  overflow: clip;
+}
+
+.gridBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(13, 18, 33, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(13, 18, 33, 0.05) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: radial-gradient(circle at 50% 14%, black 22%, transparent 72%);
+  opacity: 0.52;
+}
+
+.heroGlowOrange,
+.heroGlowViolet {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 999px;
+  filter: blur(72px);
+}
+
+.heroGlowOrange {
+  top: 120px;
+  right: 160px;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(247, 92, 48, 0.14), transparent 72%);
+}
+
+.heroGlowViolet {
+  top: 170px;
+  right: 290px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(77, 83, 255, 0.1), transparent 72%);
+}
+
+.main,
+.siteFooter {
+  position: relative;
+  z-index: 1;
+  width: min(calc(100% - 2rem), 1240px);
+  margin-inline: auto;
+}
+
+.footerLinks a {
+  position: relative;
+  color: var(--token-ink);
+  text-decoration: none;
+  font-size: 16px;
+  line-height: 27.2px;
+  letter-spacing: -0.3px;
+  transition:
+    color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Footer brand (mini re-use of the mark shape) */
+.footerBrandLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footerBrandWord {
+  font-family: var(--font-host-grotesk), sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+  line-height: 1;
+  color: var(--token-ink);
+}
+
+.footerBrandMark {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+}
+
+.footerBrandMark::before,
+.footerBrandMark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 16px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--token-accent);
+}
+
+.footerBrandMark::before { transform: rotate(45deg); }
+.footerBrandMark::after  { transform: rotate(-45deg); }
+
+.main {
+  padding: 32px 30px 54px;
+}
+
+.siteFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 30px 48px;
+}
+
+.footerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+@media (hover: hover) {
+  .footerLinks a:hover {
+    color: var(--token-accent);
+  }
+}
+
+@media (max-width: 767px) {
+  .headerWrap,
+  .main,
+  .siteFooter {
+    width: min(calc(100% - 1rem), 1240px);
+  }
+
+  .main {
+    padding: 24px 20px 40px;
+  }
+
+  .siteFooter {
+    padding-left: 20px;
+    padding-right: 20px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from queue import Queue
+from typing import Any
+
 from app.schemas import (
     AgentMeta,
     FileContent,
@@ -183,6 +186,88 @@ GROUNDING_WARNING = (
 
 
 # ---------------------------------------------------------------------------
+# Helpers for extracting clean log content from CrewAI internals
+# ---------------------------------------------------------------------------
+
+def _extract_step_content(step_output: Any) -> str:
+    """Pull readable content from an AgentFinish/AgentAction step."""
+    import json as _json
+
+    output_str = getattr(step_output, "output", None)
+    if output_str is None:
+        rv = getattr(step_output, "return_values", None)
+        if isinstance(rv, dict):
+            output_str = rv.get("output", str(rv))
+        else:
+            output_str = str(step_output)
+
+    if not isinstance(output_str, str):
+        output_str = str(output_str)
+
+    try:
+        parsed = _json.loads(output_str)
+        if isinstance(parsed, dict):
+            if "content" in parsed:
+                content = parsed["content"]
+                lines = content.split("\\n") if "\\n" in content else content.split("\n")
+                header = next((l.strip() for l in lines if l.strip()), "")
+                char_count = len(content)
+                return f"Generated file ({char_count} chars): {header}"
+            if "skill_name" in parsed:
+                name = parsed.get("skill_name", "")
+                desc = parsed.get("description", "")
+                topic = parsed.get("primary_topic", "")
+                tone = parsed.get("tone", "")
+                phrases = parsed.get("key_phrases", [])
+                parts = [f"Analysis complete — {name}"]
+                if desc:
+                    parts.append(f"Description: {desc}")
+                if topic:
+                    parts.append(f"Topic: {topic}")
+                if tone:
+                    parts.append(f"Tone: {tone}")
+                if phrases:
+                    parts.append(f"Key phrases extracted: {len(phrases)}")
+                return "\n".join(parts)
+    except (_json.JSONDecodeError, TypeError, ValueError):
+        pass
+
+    return output_str
+
+
+def _extract_task_content(task_output: Any) -> str:
+    """Pull readable summary from a completed task output."""
+    import json as _json
+
+    pyd = getattr(task_output, "pydantic", None)
+    if pyd is not None:
+        if hasattr(pyd, "skill_name"):
+            return f"{pyd.skill_name}: {getattr(pyd, 'description', '')}"
+        if hasattr(pyd, "content"):
+            content = pyd.content
+            lines = content.split("\n")
+            header = next((l.strip() for l in lines if l.strip() and not l.startswith("---")), "")
+            return f"{header} ({len(content)} chars)"
+        if hasattr(pyd, "display_name"):
+            return f"{pyd.display_name}: {getattr(pyd, 'short_description', '')}"
+
+    raw = getattr(task_output, "raw", None)
+    if isinstance(raw, str):
+        try:
+            parsed = _json.loads(raw)
+            if isinstance(parsed, dict) and "content" in parsed:
+                content = parsed["content"]
+                lines = content.replace("\\n", "\n").split("\n")
+                header = next((l.strip() for l in lines if l.strip() and not l.startswith("---")), "")
+                return f"{header} ({len(content)} chars)"
+        except (_json.JSONDecodeError, TypeError):
+            pass
+        return raw[:300] + "…" if len(raw) > 300 else raw
+
+    return str(task_output)[:300]
+
+
+# ---------------------------------------------------------------------------
 # Crew runner
 # ---------------------------------------------------------------------------
 
@@ -193,7 +278,7 @@ class SkillCrewRunner:
 
     def run(self, request: GenerateSkillRequest) -> tuple[str, list[GeneratedFile]]:
         """Return (skill_name, files) assembled from per-file tasks."""
-        from crewai import Agent, Crew, LLM, Process, Task
+        from crewai import Agent, Crew, LLM, Process
 
         analysis_llm = LLM(model=self.model, temperature=0.2)
         writer_llm = LLM(model=self.model, temperature=0.3, max_tokens=16384)
@@ -227,7 +312,131 @@ class SkillCrewRunner:
             verbose=self.verbose,
         )
 
-        # ---- Task 1: Analyze ------------------------------------------------
+        tasks = self._build_tasks(analyst, writer)
+
+        crew = Crew(
+            agents=[analyst, writer],
+            tasks=tasks,
+            process=Process.sequential,
+            verbose=self.verbose,
+        )
+
+        result = crew.kickoff(inputs=request.model_dump())
+
+        return self._extract_results(result, request)
+
+    def run_with_events(
+        self, request: GenerateSkillRequest, event_queue: Queue[dict[str, Any] | None],
+    ) -> tuple[str, list[GeneratedFile]]:
+        """Same as run() but pushes progress events to *event_queue*.
+
+        Events are dicts like:
+          {"type": "crew_start"}
+          {"type": "task_start", "index": 0, "name": "Analyze", "agent": "..."}
+          {"type": "step", "output": "..."}
+          {"type": "task_done", "index": 0, "name": "Analyze", "summary": "..."}
+          {"type": "crew_done"}
+        A final None sentinel signals completion.
+        """
+        from crewai import Agent, Crew, LLM, Process, Task
+
+        analysis_llm = LLM(model=self.model, temperature=0.2)
+        writer_llm = LLM(model=self.model, temperature=0.3, max_tokens=16384)
+
+        task_counter: dict[str, int] = {"current": -1}
+        task_names = [
+            "Analyze creator content",
+            "Write SKILL.md",
+            "Write framework.md",
+            "Write examples.md",
+            "Write sources.md",
+            "Write openai.yaml",
+        ]
+
+        def on_step(step_output: Any) -> None:
+            text = _extract_step_content(step_output)
+            event_queue.put({
+                "type": "step",
+                "task_index": task_counter["current"],
+                "output": text,
+            })
+
+        def on_task_done(task_output: Any) -> None:
+            idx = task_counter["current"]
+            raw = _extract_task_content(task_output)
+            event_queue.put({
+                "type": "task_done",
+                "index": idx,
+                "name": task_names[idx] if idx < len(task_names) else f"Task {idx}",
+                "summary": raw,
+            })
+            task_counter["current"] = idx + 1
+            if task_counter["current"] < len(task_names):
+                event_queue.put({
+                    "type": "task_start",
+                    "index": task_counter["current"],
+                    "name": task_names[task_counter["current"]],
+                })
+
+        analyst = Agent(
+            role="Creator Content Analyst",
+            goal="Extract the repeatable workflow, constraints, audience, and tone from raw creator content.",
+            backstory=(
+                "You find structure in raw creator scripts and posts. "
+                "You extract only what exists in the source — no invented additions. "
+                "You quote the creator's exact words whenever possible."
+            ),
+            llm=analysis_llm,
+            verbose=self.verbose,
+        )
+
+        writer = Agent(
+            role="Skill File Author",
+            goal=(
+                "Write one detailed, production-ready skill file at a time, "
+                "grounded entirely in the creator's actual content."
+            ),
+            backstory=(
+                "You write skills as job descriptions, not prompts. "
+                "You preserve the creator's exact method, phrases, vocabulary, and constraints. "
+                "You never generate placeholder text — every file is complete, operational, and detailed. "
+                "When asked for a reference file you write 80-150 lines of real content. "
+                "You NEVER copy from reference examples — you use them for structure only."
+            ),
+            llm=writer_llm,
+            verbose=self.verbose,
+        )
+
+        tasks = self._build_tasks(analyst, writer)
+
+        event_queue.put({"type": "crew_start", "total_tasks": len(tasks), "task_names": task_names})
+        task_counter["current"] = 0
+        event_queue.put({"type": "task_start", "index": 0, "name": task_names[0]})
+
+        crew = Crew(
+            agents=[analyst, writer],
+            tasks=tasks,
+            process=Process.sequential,
+            verbose=self.verbose,
+            step_callback=on_step,
+            task_callback=on_task_done,
+        )
+
+        result = crew.kickoff(inputs=request.model_dump())
+        event_queue.put({"type": "crew_done"})
+        event_queue.put(None)
+
+        return self._extract_results(result, request)
+
+    def _build_tasks(self, analyst: Any, writer: Any) -> list:
+        """Build the list of CrewAI tasks (shared between run and run_with_events)."""
+        from crewai import Task
+
+        creator_block = (
+            "--- ORIGINAL CREATOR CONTENT (use this as your primary source) ---\n"
+            "{creator_content}\n"
+            "--- END CREATOR CONTENT ---\n"
+        )
 
         analyze_task = Task(
             description=(
@@ -241,9 +450,15 @@ class SkillCrewRunner:
                 "{creator_content}\n"
                 "--- END ---\n\n"
                 "Extract ALL of the following:\n"
-                "- skill_name: kebab-case, e.g. 'short-form-repurpose-engine'\n"
-                "- display_name: human-readable title\n"
-                "- description: one sentence capturing the skill's purpose\n"
+                "- skill_name: IMPORTANT — if 'Desired name' is provided above, USE THAT EXACT VALUE "
+                "as the skill_name. If not provided, create a kebab-case name that includes the "
+                "creator's name or handle (e.g. 'mkbhd-tweet-style', 'naval-thread-craft', "
+                "'paul-graham-essay-voice'). NEVER use generic names like 'tech-content-creation' "
+                "or 'twitter-thread-analysis' — the name must identify the specific creator.\n"
+                "- display_name: human-readable title that includes the creator's name "
+                "(e.g. 'MKBHD Tweet Style', not 'Tech Content Creation')\n"
+                "- description: one sentence capturing the skill's purpose — must mention the "
+                "creator by name and be specific about their style, not generic\n"
                 "- primary_topic: the core subject the creator teaches\n"
                 "- target_audience: who this skill is for\n"
                 "- tone: describe HOW the creator writes (sentence style, personality, directness)\n"
@@ -272,15 +487,6 @@ class SkillCrewRunner:
             output_pydantic=SkillAnalysis,
         )
 
-        # Creator content block injected into every file task
-        creator_block = (
-            "--- ORIGINAL CREATOR CONTENT (use this as your primary source) ---\n"
-            "{creator_content}\n"
-            "--- END CREATOR CONTENT ---\n"
-        )
-
-        # ---- Task 2: SKILL.md -----------------------------------------------
-
         skill_md_task = Task(
             description=(
                 "Write the root SKILL.md file for this skill package.\n\n"
@@ -290,8 +496,11 @@ class SkillCrewRunner:
                 f"{creator_block}\n"
                 "Content kind: {content_kind}\n\n"
                 "REQUIREMENTS:\n"
-                "- YAML frontmatter with `name` (kebab-case) and `description` (one sentence)\n"
-                "- 2-3 sentence intro explaining what the skill does, using the creator's own language\n\n"
+                "- YAML frontmatter with `name` and `description` (one sentence).\n"
+                "  IMPORTANT: If 'Desired name' is provided above, use that EXACT name in the "
+                "frontmatter `name:` field. The name must identify the specific creator.\n"
+                "- 2-3 sentence intro explaining what the skill does — mention the creator by "
+                "name/handle and use their own language\n\n"
                 "- 'Framework at a Glance' section: 4-6 bold-labeled items summarizing the creator's "
                 "ACTUAL steps/patterns. CRITICAL: Do NOT use generic labels like 'Product Reviews', "
                 "'Engagement', 'Content Sharing'. Instead, derive SPECIFIC pattern names from the "
@@ -333,8 +542,6 @@ class SkillCrewRunner:
             context=[analyze_task],
             output_pydantic=FileContent,
         )
-
-        # ---- Task 3: references/framework.md --------------------------------
 
         framework_task = Task(
             description=(
@@ -391,6 +598,8 @@ class SkillCrewRunner:
                 "- Use markdown headers (##, ###) to organize\n"
                 "- Include blockquotes (>) for pattern templates\n"
                 "- Quote the creator's exact phrases when describing rules\n"
+                "- SPREAD your quote selections across the ENTIRE source corpus — do not cluster "
+                "around the same few quotes. Use different source material for each pattern.\n"
                 "- Do NOT borrow patterns or language from the varun-maya example"
             ),
             expected_output="A detailed framework.md (80+ lines) with named sub-techniques, granular execution steps with the creator's specific numbers, constraints with explanations, output contract for all 3 output types, and language rules from the source.",
@@ -398,8 +607,6 @@ class SkillCrewRunner:
             context=[analyze_task],
             output_pydantic=FileContent,
         )
-
-        # ---- Task 4: references/examples.md ---------------------------------
 
         examples_task = Task(
             description=(
@@ -411,6 +618,9 @@ class SkillCrewRunner:
                 "Content kind: {content_kind}\n\n"
                 "CRITICAL: Read the creator content above carefully. Your examples must demonstrate "
                 "THIS SPECIFIC SKILL being applied to THIS SPECIFIC DOMAIN.\n\n"
+                "DIVERSITY RULE: You have access to the framework.md that was already written. "
+                "Your examples MUST use DIFFERENT quotes and source material from what framework.md already used. "
+                "Do not repeat the same 5-6 quotes — pull from parts of the source corpus that haven't been featured yet.\n\n"
                 "CONTENT-KIND-SPECIFIC EXAMPLES:\n"
                 "If content_kind is 'twitter-threads':\n"
                 "- INPUT = a topic/product/event the creator would tweet about\n"
@@ -455,36 +665,51 @@ class SkillCrewRunner:
                 "- Do NOT invent statistics or cite fake studies\n"
                 "- Outputs in examples must match the EXACT format the creator specifies"
             ),
-            expected_output="A detailed examples.md (80+ lines) with 3+ domain-specific good examples showing all output types, 2+ anti-examples citing the creator's exact constraints, and a flat-vs-alive table in the creator's domain.",
+            expected_output="A detailed examples.md (80+ lines) with 3+ domain-specific good examples showing all output types, 2+ anti-examples citing the creator's exact constraints, and a flat-vs-alive table in the creator's domain. Uses DIFFERENT quotes from framework.md.",
             agent=writer,
-            context=[analyze_task],
+            context=[analyze_task, framework_task],
             output_pydantic=FileContent,
         )
-
-        # ---- Task 5: references/sources.md -----------------------------------
 
         sources_task = Task(
             description=(
                 "Write references/sources.md — source-grounded material extracted from the creator.\n\n"
                 f"{creator_block}\n"
+                "DIVERSITY RULE: You have access to framework.md and examples.md that were already written. "
+                "Your sources.md MUST maximize coverage of the source corpus. Prioritize quotes and phrases "
+                "that have NOT already been featured prominently in the other files. The goal is that across "
+                "all reference files, the reader sees the FULL breadth of the creator's content, not the same "
+                "handful of quotes repeated everywhere.\n\n"
                 "YOUR FILE MUST INCLUDE ALL OF THESE SECTIONS:\n\n"
                 "## Key Phrases\n"
-                "- Extract 10-20 important phrases VERBATIM from the creator content above\n"
+                "- Extract 15-25 important phrases VERBATIM from the creator content above\n"
                 "- COPY-PASTE exact wording — do not paraphrase, rewrite, or summarize\n"
                 "- Each phrase must be in quotes and must appear word-for-word in the source\n"
+                "- IMPORTANT: Spread your selections across the ENTIRE source corpus. Do not cluster "
+                "around the first few items. Pull from early, middle, AND late source material.\n"
                 "- Include: workflow instructions, constraints, descriptions, and distinctive phrasing\n\n"
                 "## Creator Voice Characteristics\n"
                 "- 6+ bullet points describing HOW the creator communicates\n"
                 "- Cover: sentence length, tone, directness, use of commands, perspective, personality\n"
                 "- Support each characteristic with a brief quote from the source as evidence\n\n"
                 "## Banned Phrases and Patterns\n"
-                "- List every pattern the creator EXPLICITLY rejects (things they say NOT to do)\n"
-                "- Quote their exact words for each rejection\n"
-                "- Then add patterns that would violate the creator's style based on their voice\n"
-                "- 8+ items total\n\n"
+                "- IMPORTANT: This section lists phrases that GENERATED content should AVOID.\n"
+                "- Do NOT list the creator's own quotes here — their actual words are POSITIVE examples, not banned content.\n"
+                "- A phrase that appears in the creator's tweets/content must NEVER appear in this banned list.\n"
+                "- Instead, list:\n"
+                "  1. Generic, flat, or templated phrases that would sound off-brand for this creator "
+                "(e.g. 'Check out my latest video!' if the creator never writes that way)\n"
+                "  2. Filler phrases or clichés that clash with the creator's voice\n"
+                "  3. Any patterns the creator explicitly warns against (only if they actually say what NOT to do)\n"
+                "  4. Overly formal or stiff language if the creator is casual (or vice versa)\n"
+                "  5. Vague or unspecific language if the creator is detail-oriented\n"
+                "- 8+ items total\n"
+                "- For each banned phrase, explain WHY it violates the creator's style\n\n"
                 "## Evidence and Quotes\n"
                 "- 5-10 complete sentences copied VERBATIM from the creator content\n"
                 "- Choose sentences that best capture the creator's method and reasoning\n"
+                "- IMPORTANT: These should be DIFFERENT quotes from the ones in Key Phrases above. "
+                "Do not repeat the same quotes across sections — maximize coverage of the source material.\n"
                 "- These must be exact copies from the source — do NOT invent or modify\n\n"
                 "## Terminology Glossary\n"
                 "- Every creator-specific or domain-specific term from the source\n"
@@ -496,13 +721,11 @@ class SkillCrewRunner:
                 "- Do NOT include phrases from the varun-maya examples or from other generated files\n"
                 "- Do NOT generalize or paraphrase — exactness is the whole point of this file"
             ),
-            expected_output="A detailed sources.md (60+ lines) with verbatim phrases from the source, voice characteristics with evidence, banned patterns, exact quotes, and glossary.",
+            expected_output="A detailed sources.md (60+ lines) with verbatim phrases from the source (different from ones already in framework.md and examples.md), voice characteristics with evidence, banned patterns (NOT the creator's own quotes), exact quotes, and glossary.",
             agent=writer,
-            context=[analyze_task],
+            context=[analyze_task, framework_task, examples_task],
             output_pydantic=FileContent,
         )
-
-        # ---- Task 6: agents/openai.yaml --------------------------------------
 
         yaml_task = Task(
             description=(
@@ -519,25 +742,7 @@ class SkillCrewRunner:
             output_pydantic=AgentMeta,
         )
 
-        # ---- Run the crew ----------------------------------------------------
-
-        crew = Crew(
-            agents=[analyst, writer],
-            tasks=[
-                analyze_task,
-                skill_md_task,
-                framework_task,
-                examples_task,
-                sources_task,
-                yaml_task,
-            ],
-            process=Process.sequential,
-            verbose=self.verbose,
-        )
-
-        result = crew.kickoff(inputs=request.model_dump())
-
-        return self._extract_results(result, request)
+        return [analyze_task, skill_md_task, framework_task, examples_task, sources_task, yaml_task]
 
     # ------------------------------------------------------------------
 
@@ -587,9 +792,12 @@ class SkillCrewRunner:
                 elif slot_name == "sources":
                     sources_content = raw
 
-        skill_name = analysis.skill_name if analysis else (
-            request.desired_skill_name or "generated-skill"
-        )
+        if request.desired_skill_name:
+            skill_name = request.desired_skill_name
+        elif analysis:
+            skill_name = analysis.skill_name
+        else:
+            skill_name = "generated-skill"
 
         files: list[GeneratedFile] = []
         if skill_md_content:

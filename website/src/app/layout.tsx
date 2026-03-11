@@ -17,7 +17,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Creator Skill Generator",
   description:
-    "A precise Next.js implementation of a Bartix-style landing page for Creator Skill Generator.",
+    "A Next.js frontend for generating, browsing, and exporting creator-derived skill bundles through the FastAPI backend.",
 };
 
 export default function RootLayout({

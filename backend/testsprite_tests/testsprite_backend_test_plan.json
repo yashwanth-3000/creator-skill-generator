@@ -1,52 +1,77 @@
 [
   {
     "id": "TC001",
-    "title": "test_health_check_endpoint_returns_status_ok",
-    "description": "Verify that GET /api/health returns a 200 status code with a JSON body containing {\"status\":\"ok\"} indicating the service is healthy."
+    "title": "get api health returns service status ok",
+    "description": "Test GET /api/health endpoint to verify it returns 200 status with JSON containing status ok, service name Creator Skill Backend, and version 1.0.0."
   },
   {
     "id": "TC002",
-    "title": "test_v1_generate_skill_with_valid_content",
-    "description": "Test POST /api/v1/generate-skill with valid creator_content of at least 40 characters and optional parameters, expecting a 200 response with GenerateSkillResponse including skill_name and zip path."
+    "title": "post api v1 generate skill with short content returns validation error",
+    "description": "Test POST /api/v1/generate-skill with creator_content shorter than 40 characters to receive 422 Pydantic validation error with type string_too_short and loc [body, creator_content]."
   },
   {
     "id": "TC003",
-    "title": "test_v1_generate_skill_with_short_content",
-    "description": "Test POST /api/v1/generate-skill with creator_content shorter than 40 characters, expecting a 422 Pydantic validation error indicating string_too_short."
+    "title": "post api v2 generate skill twitter with empty username returns validation error",
+    "description": "Test POST /api/v2/generate-skill/twitter with empty twitter_username to receive 422 Pydantic validation error due to min_length=1 constraint."
   },
   {
     "id": "TC004",
-    "title": "test_v2_generate_skill_twitter_with_valid_username_and_token",
-    "description": "Test POST /api/v2/generate-skill/twitter with a valid twitter_username and configured X_BEARER_TOKEN, expecting a 200 response with GenerateSkillResponse including skill_name and source_metadata."
+    "title": "post api v2 generate skill youtube with empty url list returns validation error",
+    "description": "Test POST /api/v2/generate-skill/youtube with empty youtube_urls list to receive 422 Pydantic validation error with type too_short."
   },
   {
     "id": "TC005",
-    "title": "test_v2_generate_skill_twitter_without_bearer_token",
-    "description": "Test POST /api/v2/generate-skill/twitter with a valid twitter_username but without X_BEARER_TOKEN configured, expecting a 400 error indicating token not configured or no tweets found."
+    "title": "post api v1 generate skill stream with short content returns validation error",
+    "description": "Test POST /api/v1/generate-skill/stream with creator_content shorter than 40 characters to receive 422 Pydantic validation error. This tests that the SSE streaming endpoint enforces the same validation as the non-streaming endpoint."
   },
   {
     "id": "TC006",
-    "title": "test_v2_generate_skill_youtube_with_valid_urls",
-    "description": "Test POST /api/v2/generate-skill/youtube with a list of valid YouTube URLs, expecting a 200 response with GenerateSkillResponse including skill_name, source_metadata, and possible warnings for partial transcripts."
+    "title": "post api v2 generate skill stream with short content returns validation error",
+    "description": "Test POST /api/v2/generate-skill/stream with creator_content shorter than 40 characters to receive 422 Pydantic validation error. This tests the v2 streaming endpoint validation."
   },
   {
     "id": "TC007",
-    "title": "test_v2_generate_skill_youtube_with_empty_url_list",
-    "description": "Test POST /api/v2/generate-skill/youtube with an empty list of youtube_urls, expecting a 422 Pydantic validation error due to minimum items constraint."
+    "title": "post api v2 generate skill twitter stream with empty username returns validation error",
+    "description": "Test POST /api/v2/generate-skill/twitter/stream with empty twitter_username to receive 422 Pydantic validation error. This tests that the SSE twitter streaming endpoint enforces the same input validation as the non-streaming twitter endpoint."
   },
   {
     "id": "TC008",
-    "title": "test_get_skill_detail_for_existing_skill",
-    "description": "Test GET /api/v1/skills/{skill_name} for an existing skill, expecting a 200 response with SkillDetail including files and their contents."
+    "title": "post api v2 generate skill youtube stream with empty url list returns validation error",
+    "description": "Test POST /api/v2/generate-skill/youtube/stream with empty youtube_urls list to receive 422 Pydantic validation error. This tests that the SSE youtube streaming endpoint enforces the same validation."
   },
   {
     "id": "TC009",
-    "title": "test_delete_skill_and_verify_removal",
-    "description": "Test DELETE /api/v1/skills/{skill_name} to delete a skill, expecting a 200 confirmation, and subsequent GET /api/v1/skills/{skill_name} returns 404 indicating skill not found."
+    "title": "get api v1 skills returns list of generated skills",
+    "description": "Test GET /api/v1/skills to verify it returns 200 with JSON containing skills array and count. Each skill should have name, has_skill_md, file_count, and files metadata."
   },
   {
     "id": "TC010",
-    "title": "test_export_single_file_with_path_traversal_attempt",
-    "description": "Test GET /api/v1/export/{skill_name}/{file_path} with a file_path containing '..' to verify the middleware blocks path traversal attempts and returns a 400 Invalid path error."
+    "title": "get api v1 skills skill name returns skill detail with files",
+    "description": "Test GET /api/v1/skills/{skill_name} with an existing skill name to receive 200 response with full skill details including files array containing relative_path and content."
+  },
+  {
+    "id": "TC011",
+    "title": "delete api v1 skills nonexistent returns 404",
+    "description": "Test DELETE /api/v1/skills/nonexistent-skill-xyz-999 to receive 404 with detail containing not found."
+  },
+  {
+    "id": "TC012",
+    "title": "get api v1 export skill zip returns zip archive",
+    "description": "Test GET /api/v1/export/{skill_name}/zip with a valid existing skill_name to receive 200 response with application/zip content-type."
+  },
+  {
+    "id": "TC013",
+    "title": "get api v1 export with path traversal returns 400 error",
+    "description": "Test GET /api/v1/export/..%2F..%2Fetc/passwd to verify PathTraversalGuard middleware blocks the request with 400 Invalid path error."
+  },
+  {
+    "id": "TC014",
+    "title": "post api v2 generate skill twitter stream nonexistent user returns 502",
+    "description": "Test POST /api/v2/generate-skill/twitter/stream with twitter_username xyznonexistent999 to receive 502 error from X API indicating user not found."
+  },
+  {
+    "id": "TC015",
+    "title": "post api v2 generate skill youtube stream with invalid url returns 400",
+    "description": "Test POST /api/v2/generate-skill/youtube/stream with youtube_urls containing a single invalid URL like https://not-a-youtube-url.com/watch to receive 400 error."
   }
 ]

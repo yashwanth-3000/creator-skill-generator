@@ -55,7 +55,6 @@
   background: radial-gradient(circle, rgba(77, 83, 255, 0.18), transparent 72%);
 }
 
-.siteHeader,
 .main,
 .siteFooter {
   position: relative;
@@ -64,13 +63,6 @@
   margin-inline: auto;
 }
 
-.siteHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  padding: 24px 30px 0;
-}
 
 .brand {
   display: inline-flex;
@@ -119,13 +111,6 @@
   transform: rotate(-45deg);
 }
 
-.mainNav {
-  display: flex;
-  align-items: center;
-  gap: 36px;
-}
-
-.mainNav a,
 .footerColumn a,
 .contactLinks a {
   position: relative;
@@ -136,23 +121,6 @@
   transition:
     transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
     color 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.mainNav a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -8px;
-  width: 100%;
-  height: 2px;
-  border-radius: 999px;
-  background: var(--token-accent);
-  opacity: 0;
-  transform: scaleX(0.2);
-  transform-origin: left center;
-  transition:
-    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
     opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -260,13 +228,25 @@
 }
 
 .heroCopy h1 {
-  max-width: 10.6ch;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: none;
   margin-top: 10px;
   font-size: 72px;
   font-weight: 500;
   line-height: 75.6px;
   letter-spacing: -2.5px;
   color: var(--token-ink);
+}
+
+.heroLine {
+  display: block;
+  white-space: nowrap;
+}
+
+.heroAccent {
+  color: var(--token-accent);
 }
 
 .heroText {
@@ -428,7 +408,6 @@
 .chartCard,
 .metricCard,
 .featureCard,
-.workflowCard,
 .pointCard,
 .timelinePanel,
 .signalPanel,
@@ -675,7 +654,10 @@
   object-fit: contain;
 }
 
-.featureSection,
+.featureSection {
+  padding: 32px 30px 0;
+}
+
 .workflowSection,
 .insightSection {
   padding: 32px 30px 0;
@@ -727,10 +709,12 @@
 
 .workflowCard {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 560px);
-  align-items: start;
-  gap: 48px;
+  grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
+  align-items: center;
+  gap: 56px;
   padding: 0;
+  background: transparent;
+  border: 0;
   transition:
     box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1),
     border-color 260ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -756,9 +740,14 @@
   color: var(--token-ink);
 }
 
+.workflowCopy {
+  display: grid;
+  align-content: center;
+}
+
 .workflowCopy p {
   margin-top: 12px;
-  max-width: 500px;
+  max-width: 540px;
   font-size: 16px;
   line-height: 27.2px;
   letter-spacing: -0.3px;
@@ -768,11 +757,13 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 22px;
-  margin-top: 68px;
+  margin-top: 34px;
 }
 
 .pointCard {
-  padding: 0;
+  min-height: 132px;
+  border-radius: 18px;
+  padding: 16px 18px 18px;
   transition:
     transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -811,7 +802,7 @@
 }
 
 .workflowList {
-  margin-top: 72px;
+  margin-top: 36px;
   padding-left: 0;
   list-style: none;
 }
@@ -842,16 +833,17 @@
 }
 
 .workflowVisual {
-  min-height: 460px;
+  min-height: 420px;
 }
 
 .workflowFrame {
   position: relative;
-  min-height: 460px;
+  min-height: 420px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  border-radius: 28px;
   background:
     linear-gradient(rgba(13, 18, 33, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(13, 18, 33, 0.05) 1px, transparent 1px);
@@ -861,7 +853,8 @@
 .workflowFrame::before {
   content: "";
   position: absolute;
-  inset: 44px 72px 92px;
+  inset: 30px 24px;
+  border-radius: 24px;
   background:
     repeating-linear-gradient(
       -30deg,
@@ -875,7 +868,7 @@
 .workflowFrame::after {
   content: "";
   position: absolute;
-  inset: 92px 88px 110px;
+  inset: 78px 88px 76px;
   border-radius: 28px;
   background:
     radial-gradient(circle at 12% 48%, rgba(77, 83, 255, 0.25), transparent 26%),
@@ -884,29 +877,694 @@
   filter: blur(18px);
 }
 
-.workflowShot {
+.workflowShell {
   position: relative;
   z-index: 1;
-  display: block;
-  width: min(100%, 430px);
+  width: min(100%, 488px);
   border-radius: 22px;
-  border: 1.5px solid rgba(13, 18, 33, 0.22);
+  border: 1px solid rgba(13, 18, 33, 0.1);
+  background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 24px 56px rgba(13, 18, 33, 0.12);
   transition:
     transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.shotLarge {
-  width: min(100%, 438px);
+.workflowShellHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 23.8px;
+  letter-spacing: -0.2px;
+  color: var(--token-ink);
 }
 
-.shotProfile {
-  width: min(100%, 402px);
+.workflowShellHeader span:last-child {
+  color: var(--token-copy);
+  font-weight: 500;
 }
 
-.shotChart {
-  width: min(100%, 352px);
+.sourcesShell,
+.inputsShell,
+.bundleShell {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.sourceList,
+.bundleTree,
+.apiList,
+.exportTree {
+  display: grid;
+  gap: 10px;
+}
+
+.sourceItem,
+.bundleTreeItem,
+.apiRow,
+.exportFolder,
+.exportFile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(13, 18, 33, 0.08);
+  background: var(--token-bg-card);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sourceBadge,
+.inputTag,
+.apiMethod {
+  min-width: 38px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.sourceBadgeYoutube {
+  background: rgba(247, 92, 48, 0.14);
+  color: var(--token-accent);
+}
+
+.sourceBadgeTwitter {
+  background: rgba(13, 18, 33, 0.08);
+  color: var(--token-ink);
+}
+
+.sourceBadgePaste {
+  background: rgba(77, 83, 255, 0.12);
+  color: var(--token-violet);
+}
+
+.sourceMeta,
+.bundleTreeItem,
+.mergeNode div {
+  min-width: 0;
+}
+
+.sourceMeta strong,
+.inputCard strong,
+.bundleTreeItem span,
+.workflowOutputCard strong,
+.apiPath,
+.exportZip,
+.proofTreeItem span,
+.proofPreview strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 27.2px;
+  letter-spacing: -0.3px;
+  color: var(--token-ink);
+}
+
+.sourceMeta small,
+.inputCard small,
+.bundleTreeItem small,
+.workflowOutputCard small,
+.apiStatus,
+.proofTreeItem small,
+.proofPreviewLabel,
+.proofPreviewStats small {
+  display: block;
+  font-size: 14px;
+  line-height: 23.8px;
+  letter-spacing: -0.2px;
+  color: var(--token-copy);
+}
+
+.extractGrid,
+.inputsRail,
+.proofPreviewStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.extractCard,
+.inputCard,
+.workflowOutputCard,
+.proofPreview {
+  border-radius: 18px;
+  border: 1px solid rgba(13, 18, 33, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 246, 244, 0.98));
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.extractCard {
+  padding: 14px;
+}
+
+.extractCard small {
+  display: block;
+  font-size: 12px;
+  line-height: 20px;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  color: rgba(55, 55, 61, 0.76);
+}
+
+.extractCard strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 24px;
+  letter-spacing: -0.2px;
+  color: var(--token-ink);
+}
+
+.extractBar {
+  display: block;
+  height: 8px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(13, 18, 33, 0.08);
+}
+
+.extractBar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--token-accent), var(--token-violet));
+  transition:
+    width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.inputCard {
+  display: grid;
+  gap: 8px;
+  padding: 16px 14px 14px;
+}
+
+.inputTag {
+  background: rgba(13, 18, 33, 0.08);
+  color: var(--token-ink);
+}
+
+.mergePanel {
+  display: grid;
+  gap: 12px;
+}
+
+.mergeNode {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(77, 83, 255, 0.14);
+  background: linear-gradient(135deg, rgba(77, 83, 255, 0.08), rgba(247, 92, 48, 0.08));
+}
+
+.mergeRing {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 2px solid rgba(77, 83, 255, 0.3);
+  background:
+    radial-gradient(circle at center, var(--token-violet) 0 26%, transparent 27%),
+    #ffffff;
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mergeNode strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 27.2px;
+  letter-spacing: -0.3px;
+}
+
+.mergeNode small {
+  display: block;
+  font-size: 14px;
+  line-height: 23.8px;
+  letter-spacing: -0.2px;
+  color: var(--token-copy);
+}
+
+.mergeBars {
+  display: grid;
+  gap: 10px;
+  padding: 0 10px;
+}
+
+.mergeBars span {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(13, 18, 33, 0.08);
+  transition:
+    width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mergeBars span:nth-child(1) {
+  width: 92%;
+}
+
+.mergeBars span:nth-child(2) {
+  width: 76%;
+  background: rgba(77, 83, 255, 0.18);
+}
+
+.mergeBars span:nth-child(3) {
+  width: 58%;
+}
+
+.workflowOutputCard {
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(255, 248, 240, 0.98), rgba(244, 243, 255, 0.98));
+}
+
+.workflowOutputLabel {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  letter-spacing: 0.28px;
+  text-transform: uppercase;
+  color: var(--token-accent);
+}
+
+.inputsCanvas {
+  display: grid;
+  grid-template-columns: minmax(0, 164px) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.inputsSourceStack {
+  display: grid;
+  gap: 10px;
+}
+
+.flowSourceCard,
+.flowCoreCard,
+.flowResultCard {
+  border-radius: 18px;
+  border: 1px solid rgba(13, 18, 33, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 246, 244, 0.98));
+  transition:
+    border-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.flowSourceCard {
+  display: grid;
+  gap: 8px;
+  padding: 14px 14px 16px;
+}
+
+.flowSourcePill,
+.flowCoreLabel,
+.flowResultLabel {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.32px;
+  text-transform: uppercase;
+}
+
+.flowSourcePaste {
+  background: rgba(13, 18, 33, 0.08);
+  color: var(--token-ink);
+}
+
+.flowSourceV1 {
+  background: rgba(247, 92, 48, 0.12);
+  color: var(--token-accent);
+}
+
+.flowSourceV2 {
+  background: rgba(77, 83, 255, 0.12);
+  color: var(--token-violet);
+}
+
+.flowSourceCard strong,
+.flowCoreCard strong,
+.flowResultCard strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 27.2px;
+  letter-spacing: -0.3px;
+  color: var(--token-ink);
+}
+
+.flowSourceCard small,
+.flowCoreCard small,
+.flowResultCard small {
+  display: block;
+  font-size: 14px;
+  line-height: 23.8px;
+  letter-spacing: -0.2px;
+  color: var(--token-copy);
+}
+
+.flowCoreCard {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  align-content: start;
+  background:
+    radial-gradient(circle at top right, rgba(247, 92, 48, 0.12), transparent 34%),
+    linear-gradient(135deg, rgba(77, 83, 255, 0.08), rgba(255, 255, 255, 0.98) 42%, rgba(249, 246, 244, 0.98));
+}
+
+.flowCoreLabel {
+  background: rgba(77, 83, 255, 0.12);
+  color: var(--token-violet);
+}
+
+.flowCoreGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 10px;
+  min-height: 112px;
+  padding-top: 4px;
+}
+
+.flowCoreGrid span {
+  border-radius: 14px 14px 8px 8px;
+  background: rgba(13, 18, 33, 0.1);
+  transition:
+    background-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.flowCoreGrid span:nth-child(1) {
+  height: 40px;
+}
+
+.flowCoreGrid span:nth-child(2) {
+  height: 62px;
+}
+
+.flowCoreGrid span:nth-child(3) {
+  height: 84px;
+  background: linear-gradient(180deg, rgba(77, 83, 255, 0.86), rgba(77, 83, 255, 0.64));
+}
+
+.flowCoreGrid span:nth-child(4) {
+  height: 56px;
+}
+
+.flowChipRow,
+.flowResultTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.flowChipRow span,
+.flowResultTags span {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(13, 18, 33, 0.08);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.12px;
+  color: var(--token-ink);
+  transition:
+    background-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.flowResultCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(255, 248, 240, 0.98), rgba(244, 243, 255, 0.98));
+}
+
+.flowResultLabel {
+  margin-bottom: 10px;
+  background: rgba(247, 92, 48, 0.12);
+  color: var(--token-accent);
+}
+
+.bundleTreeItem {
+  justify-content: space-between;
+}
+
+.bundleTreeItemActive {
+  border-color: rgba(77, 83, 255, 0.16);
+  background: linear-gradient(135deg, rgba(77, 83, 255, 0.08), rgba(255, 255, 255, 0.96));
+}
+
+.bundleExportCard {
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--token-shell) 0%, var(--token-ink) 100%);
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bundleChip {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.34px;
+  text-transform: uppercase;
+}
+
+.bundleExportCard strong,
+.bundleExportCard small {
+  display: block;
+  margin-top: 10px;
+  color: #ffffff;
+}
+
+.growthCard {
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--token-bg-soft);
+  border: 1px solid rgba(13, 18, 33, 0.06);
+  transition:
+    box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.growthVisual {
+  display: grid;
+  gap: 12px;
+  min-height: 176px;
+  padding: 18px;
+  border-bottom: 1px solid rgba(13, 18, 33, 0.06);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 246, 244, 0.92));
+  transition:
+    background-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.growthVisualHeader,
+.proofWindowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 23.8px;
+  letter-spacing: -0.2px;
+}
+
+.growthVisualHeader span:last-child {
+  color: var(--token-copy);
+  font-weight: 500;
+}
+
+.apiMethod {
+  background: rgba(77, 83, 255, 0.12);
+  color: var(--token-violet);
+}
+
+.apiPath {
+  flex: 1;
+}
+
+.apiStatus {
+  color: var(--token-green);
+  font-weight: 600;
+}
+
+.exportTree {
+  gap: 8px;
+}
+
+.exportFolder {
+  background: rgba(13, 18, 33, 0.06);
+  color: var(--token-ink);
+  font-weight: 600;
+}
+
+.exportFile {
+  padding-left: 24px;
+}
+
+.exportZip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(77, 83, 255, 0.14), rgba(247, 92, 48, 0.14));
+  border: 1px solid rgba(77, 83, 255, 0.12);
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.portraitPanel {
+  min-height: 420px;
+  border-radius: 22px;
+  overflow: hidden;
+  background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 35%);
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.proofProduct {
+  height: 100%;
+}
+
+.proofWindow {
+  height: 100%;
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(27, 21, 35, 0.84), rgba(39, 30, 48, 0.9));
+}
+
+.proofWindowHeader {
+  color: #ffffff;
+}
+
+.proofWindowHeader span:last-child {
+  color: rgba(255, 255, 255, 0.62);
+  font-weight: 500;
+}
+
+.proofWindowGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 16px;
+  min-height: 330px;
+}
+
+.proofTree {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.proofTreeItem {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.proofTreeItemPrimary {
+  background: linear-gradient(135deg, rgba(77, 83, 255, 0.18), rgba(247, 92, 48, 0.14));
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.proofTreeItem span,
+.proofPreview strong,
+.proofPreviewStats span {
+  color: #ffffff;
+}
+
+.proofTreeItem small,
+.proofPreviewLabel,
+.proofPreviewStats small {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.proofPreview {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.proofPreviewLabel {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  letter-spacing: 0.28px;
+  text-transform: uppercase;
+}
+
+.proofPreviewStats {
+  gap: 10px;
+}
+
+.proofPreviewStats div {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .timelinePanel,
@@ -1161,23 +1819,6 @@
     transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.portraitPanel {
-  min-height: 420px;
-  border-radius: 22px;
-  overflow: hidden;
-  background: #b1987e;
-  transition:
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 260ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.portraitImage {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
 .proofCopy {
   display: grid;
   align-content: center;
@@ -1220,13 +1861,6 @@
   line-height: 33.6px;
   letter-spacing: -0.8px;
   color: #dff06a;
-}
-
-.proofLogoImage {
-  display: block;
-  width: auto;
-  height: 30px;
-  object-fit: contain;
 }
 
 .proofStats {
@@ -1285,22 +1919,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
   margin-top: 30px;
-}
-
-.growthCard {
-  overflow: hidden;
-  border-radius: 24px;
-  transition:
-    box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 240ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.growthImage {
-  display: block;
-  width: 100%;
-  height: 170px;
-  object-fit: cover;
 }
 
 .growthContent {
@@ -1608,16 +2226,9 @@
     transform: rotate(14deg) scale(1.06);
   }
 
-  .brand:hover .brandWord,
-  .mainNav a:hover,
   .footerColumn a:hover,
   .contactLinks a:hover {
     color: var(--token-accent);
-  }
-
-  .mainNav a:hover::after {
-    opacity: 1;
-    transform: scaleX(1);
   }
 
   .footerColumn a:hover,
@@ -1736,52 +2347,63 @@
     box-shadow: 0 12px 24px rgba(247, 92, 48, 0.22);
   }
 
-  .workflowCard:hover .workflowShot {
-    transform: translateY(-8px);
-    box-shadow: 0 30px 64px rgba(13, 18, 33, 0.16);
+  .workflowCard:hover .workflowShell {
+    box-shadow: 0 26px 58px rgba(13, 18, 33, 0.13);
   }
 
-  .workflowCard:hover .timelinePanel,
-  .workflowCard:hover .signalPanel,
-  .workflowCard:hover .stackPanel {
-    border-color: rgba(13, 18, 33, 0.12);
+  .workflowCard:hover .sourceItem,
+  .workflowCard:hover .bundleTreeItem,
+  .workflowCard:hover .apiRow,
+  .workflowCard:hover .exportFolder,
+  .workflowCard:hover .exportFile,
+  .workflowCard:hover .extractCard,
+  .workflowCard:hover .flowSourceCard,
+  .workflowCard:hover .flowCoreCard,
+  .workflowCard:hover .flowResultCard {
+    border-color: rgba(13, 18, 33, 0.14);
     background: #ffffff;
-    box-shadow: 0 18px 36px rgba(13, 18, 33, 0.08);
+    box-shadow: 0 12px 24px rgba(13, 18, 33, 0.06);
   }
 
-  .workflowCard:hover .timelineTooltip {
-    transform: translateX(-8%) translateY(-6px);
-    background: var(--token-accent);
-    box-shadow: 0 12px 28px rgba(247, 92, 48, 0.22);
+  .workflowCard:hover .extractBar span {
+    filter: saturate(1.1);
   }
 
-  .workflowCard:hover .timelineBars span:nth-child(2) {
-    height: 132px;
+  .workflowCard:hover .extractCard:nth-child(1) .extractBar span {
+    width: 84% !important;
   }
 
-  .workflowCard:hover .timelineBars span:nth-child(4) {
-    height: 92px;
+  .workflowCard:hover .extractCard:nth-child(2) .extractBar span {
+    width: 92% !important;
   }
 
-  .workflowCard:hover .timelineAccent {
-    background: var(--token-accent);
+  .workflowCard:hover .extractCard:nth-child(3) .extractBar span {
+    width: 72% !important;
   }
 
-  .workflowCard:hover .signalRing {
-    transform: rotate(8deg) scale(1.03);
+  .workflowCard:hover .flowCoreGrid span:nth-child(3) {
+    box-shadow: 0 10px 24px rgba(77, 83, 255, 0.18);
   }
 
-  .workflowCard:hover .signalLines span:nth-child(2) {
-    width: 82%;
+  .workflowCard:hover .bundleTreeItemActive {
+    border-color: rgba(77, 83, 255, 0.22);
   }
 
-  .workflowCard:hover .signalLines span:nth-child(3) {
-    width: 64%;
+  .workflowCard:hover .bundleExportCard,
+  .growthCard:hover .exportZip {
+    box-shadow: 0 14px 28px rgba(13, 18, 33, 0.12);
   }
 
-  .workflowCard:hover .stackAccent {
-    height: 108px;
-    background: var(--token-violet);
+  .growthCard:hover .growthVisual {
+    background: linear-gradient(180deg, #ffffff, rgba(249, 246, 244, 0.96));
+  }
+
+  .growthCard:hover .apiRow,
+  .growthCard:hover .exportFolder,
+  .growthCard:hover .exportFile {
+    border-color: rgba(13, 18, 33, 0.14);
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(13, 18, 33, 0.08);
   }
 
   .proofBand:hover {
@@ -1792,6 +2414,12 @@
   .proofBand:hover .portraitPanel {
     transform: scale(1.015);
     filter: saturate(1.04);
+  }
+
+  .proofBand:hover .proofPreviewStats div {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.14);
   }
 
   .socialRow a:hover {
@@ -1899,6 +2527,7 @@
     font-size: 40px;
     line-height: 42px;
     letter-spacing: -1.5px;
+    align-items: center;
   }
 
   .heroText {
@@ -2031,14 +2660,69 @@
     inset: 56px 16px 46px;
   }
 
-  .workflowShot,
-  .shotLarge,
-  .shotProfile,
-  .shotChart {
+  .workflowShell {
     width: 100%;
   }
 
-  .growthImage {
-    height: 150px;
+  .sourcesShell,
+  .inputsShell,
+  .bundleShell,
+  .proofWindow {
+    padding: 16px;
+  }
+
+  .extractGrid,
+  .inputsRail,
+  .proofPreviewStats,
+  .proofWindowGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .inputsCanvas {
+    grid-template-columns: 1fr;
+  }
+
+  .flowResultCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sourceItem,
+  .apiRow {
+    align-items: flex-start;
+  }
+
+  .apiRow {
+    flex-wrap: wrap;
+  }
+
+  .apiStatus {
+    margin-left: 50px;
+  }
+
+  .growthVisual {
+    min-height: auto;
+  }
+
+  .workflowFrame {
+    min-height: 360px;
+  }
+
+  .workflowFrame::before {
+    inset: 18px 8px 22px;
+  }
+
+  .workflowFrame::after {
+    inset: 48px 22px 42px;
+  }
+
+  .exportZip {
+    width: 100%;
+  }
+
+  .proofCopy,
+  .growthContent,
+  .workflowCopy {
+    text-align: left;
   }
 }

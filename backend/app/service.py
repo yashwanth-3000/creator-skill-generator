@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+import asyncio
+import json
 import re
+import time
+from collections.abc import AsyncGenerator
+from queue import Empty, Queue
+from threading import Thread
 
 from app.config import Settings
 from app.crew import SkillCrewRunner
@@ -41,6 +47,73 @@ class SkillGenerationService:
             files=files,
             warnings=warnings,
         )
+
+    async def generate_streaming(
+        self, request: GenerateSkillRequest,
+    ) -> AsyncGenerator[str, None]:
+        """Run generation in a background thread and yield SSE events."""
+        event_queue: Queue[dict | None] = Queue()
+        result_holder: list[tuple[str, list[GeneratedFile]] | None] = [None]
+        error_holder: list[str | None] = [None]
+        start_time = time.time()
+
+        def _run() -> None:
+            try:
+                result_holder[0] = self.crew.run_with_events(request, event_queue)
+            except Exception as exc:
+                error_holder[0] = str(exc)
+                event_queue.put({"type": "error", "message": str(exc)})
+                event_queue.put(None)
+
+        thread = Thread(target=_run, daemon=True)
+        thread.start()
+
+        while True:
+            try:
+                event = event_queue.get(timeout=2.0)
+            except Empty:
+                if not thread.is_alive():
+                    break
+                elapsed = round(time.time() - start_time, 1)
+                yield f"event: ping\ndata: {json.dumps({'elapsed': elapsed})}\n\n"
+                continue
+
+            if event is None:
+                break
+
+            event["elapsed"] = round(time.time() - start_time, 1)
+            yield f"event: log\ndata: {json.dumps(event)}\n\n"
+            await asyncio.sleep(0)
+
+        thread.join(timeout=10)
+
+        if error_holder[0]:
+            yield f"event: error\ndata: {json.dumps({'error': error_holder[0]})}\n\n"
+            return
+
+        if result_holder[0]:
+            raw_name, files = result_holder[0]
+            skill_name = _slugify(raw_name)
+            files = self._post_process(skill_name, files, request.include_openai_yaml)
+            warnings = self._check(skill_name, files)
+
+            output_path = None
+            zip_path = None
+            if request.persist_to_disk:
+                output_path, zip_path = self.storage.persist(
+                    skill_name, files, include_zip=request.include_zip,
+                )
+
+            response = GenerateSkillResponse(
+                skill_name=skill_name,
+                output_path=output_path,
+                zip_path=zip_path,
+                files=files,
+                warnings=warnings,
+            )
+            yield f"event: result\ndata: {response.model_dump_json()}\n\n"
+
+        yield "event: done\ndata: {}\n\n"
 
     # ------------------------------------------------------------------
     # Post-processing

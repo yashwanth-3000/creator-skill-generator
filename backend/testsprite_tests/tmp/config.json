@@ -4,23 +4,31 @@
   "type": "backend",
   "localEndpoint": "http://localhost:8000/",
   "executionArgs": {
-    "projectName": "deployed-backend",
+    "projectName": "final-main-workflow-test",
     "projectPath": "/Users/yashwanthkrishna/Desktop/test-sprtie/backend",
     "testIds": [
       "TC001",
+      "TC002",
       "TC003",
+      "TC004",
       "TC005",
+      "TC006",
       "TC007",
       "TC008",
       "TC009",
-      "TC010"
+      "TC010",
+      "TC011",
+      "TC012",
+      "TC013",
+      "TC014",
+      "TC015"
     ],
-    "additionalInstruction": "CRITICAL: DO NOT use localhost. The backend is deployed at https://creator-skill-backend-production.up.railway.app — use this as BASE_URL in ALL tests.\n\nTC001: GET /api/health — expect 200 with status=ok, service=Creator Skill Backend, version=1.0.0.\nTC003: POST /api/v1/generate-skill with body {\"creator_content\":\"short\"} — expect 422. Pydantic v2 error type is string_too_short, loc is [body, creator_content].\nTC005: POST /api/v2/generate-skill/twitter with body {\"twitter_username\":\"\"} — expect 422 because empty username fails min_length=1. This is fast validation, no API call is made.\nTC007: POST /api/v2/generate-skill/youtube with body {\"youtube_urls\":[]} — expect 422. Pydantic v2 error type is too_short NOT min_items.\nTC008: GET /api/v1/skills — expect 200 with skills array. Three skills exist on the deployed server: saas-pricing-strategy, naval-wisdom, mkbhd-review-style. Then GET /api/v1/skills/naval-wisdom — expect 200 with files array containing SKILL.md content.\nTC009: DELETE /api/v1/skills/nonexistent-skill-xyz — expect 404 with detail containing not found.\nTC010: GET /api/v1/export/..%2F..%2Fetc/passwd — expect 400 with detail=Invalid path. Use URL-encoded ..%2F to test path traversal.",
+    "additionalInstruction": "CRITICAL INSTRUCTIONS FOR ALL TESTS:\n1. Use localhost:8000 as the base URL. The server is running locally.\n2. For validation tests (TC002-TC008): Send invalid input and expect 422. Pydantic v2 returns type=string_too_short (not value_error.any_str.min_length) and loc=[body, field_name].\n3. For TC005-TC008 (streaming endpoint validation): These endpoints accept the SAME request body as their non-streaming counterparts. They should return 422 for invalid input BEFORE starting the SSE stream.\n4. TC009: GET /api/v1/skills — expect skills array. Use whatever skills exist.\n5. TC010: GET /api/v1/skills/{name} — pick any skill from TC009's response.\n6. TC011: DELETE /api/v1/skills/nonexistent-skill-xyz-999 — expect 404.\n7. TC012: GET /api/v1/export/{name}/zip — use a skill name from TC009.\n8. TC013: GET /api/v1/export/..%2F..%2Fetc/passwd — expect 400 Invalid path.\n9. TC014: POST /api/v2/generate-skill/twitter/stream with username xyznonexistent999 — expect 502 from X API. This is fast (no CrewAI involved).\n10. TC015: POST /api/v2/generate-skill/youtube/stream with invalid URL — expect 400.\n11. ALL streaming endpoints (paths containing /stream) accept the same request body schema as their parent non-streaming endpoint.",
     "serverMode": "production",
     "envs": {
       "API_KEY": "sk-user-v2EbfgfRfkDjY5Y44VOeEUccldtpbWPaZ-RVRy_VBKxgjtjblR3lYnufHr5UG0qM261BWKOS0kN9d9HRD9zcKWAAIUvR-ZAHndi0SyRlP9KRi8WSw_UYC8ViM0XZd9F2vOs"
     }
   },
-  "serverPort": 55365,
-  "proxy": "http://0389bd8c-8bc3-4436-bfe9-daff21668b21:7imAU2J7FsdRMVn2d0Zeq8KulPiboO4v@tun.testsprite.com:8080"
+  "serverPort": 57378,
+  "proxy": "http://59b7400f-6f63-4cf8-b4b0-2506488c0bd6:cuvVenLcVsOkbFeEkDK45psy0HlCZzxX@tun.testsprite.com:8080"
 }

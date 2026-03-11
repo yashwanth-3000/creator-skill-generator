@@ -25,6 +25,9 @@
 **/generated_skills/**
 !**/generated_skills/.gitkeep
 
+# Video scripts (local notes, not source)
+video-scripts/
+
 # IDE
 .vscode/
 .idea/

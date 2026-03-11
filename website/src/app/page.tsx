@@ -1,91 +1,82 @@
 "use client";
 
+import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import styles from "./page.module.css";
+import { SiteHeader } from "@/components/site-header";
 
 type WorkflowCard = {
   title: string;
   body: string;
-  image: string;
-  imageAlt: string;
-  imageClassName: "shotLarge" | "shotProfile" | "shotChart";
+  visual: "sources" | "inputs" | "bundle";
   points?: Array<{ label: string; text: string }>;
   list?: string[];
 };
 
 const navItems = [
-  { label: "Platform", href: "#features" },
-  { label: "Workflows", href: "#workflows" },
-  { label: "Customers", href: "#proof" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Overview", href: "#features" },
+  { label: "Flow", href: "#workflows" },
+  { label: "Why", href: "#why" },
+  { label: "Backend", href: "#pricing" },
 ];
 
 const featureCards = [
   {
-    title: "Scenario generation",
-    body: "Generate high-coverage QA scenarios from live product changes, user flows, and regression risk.",
+    title: "Source-derived generation",
+    body: "Generate grounded skill bundles from creator material instead of starting from a blank one-off prompt.",
   },
   {
-    title: "Flexible automation",
-    body: "Route failing checks, assign follow-ups, and coordinate release gates without a second dashboard.",
+    title: "Twitter/X + YouTube ingestion",
+    body: "The unified backend supports raw pasted content plus Twitter/X and YouTube transcript ingestion.",
   },
   {
-    title: "Secure audit trails",
-    body: "Keep approvals, flaky retries, and production blockers visible with tight, role-based access control.",
+    title: "Progressive disclosure shape",
+    body: "Keep SKILL.md focused while heavier guidance moves into references/ and optional companion metadata.",
   },
   {
-    title: "Fresh release context",
-    body: "Every suite, deployment, and owner stays synchronized so the team can act on the latest state fast.",
+    title: "Portable exports",
+    body: "Return generated files directly, persist bundles under generated_skills/, and ship reusable zip exports.",
   },
 ];
 
 const workflowCards: WorkflowCard[] = [
   {
-    title: "Release Manager",
-    body: "See failing suites, deployment progress, and risk signals in one shared control center before launch.",
-    image:
-      "https://framerusercontent.com/images/ggLJnqiZxAoXvDNt0FwCX9vT3Jc.png?scale-down-to=1024",
-    imageAlt: "Release control dashboard",
-    imageClassName: "shotLarge",
+    title: "Gather creator source material",
+    body: "Start with pasted scripts, posts, notes, or transcripts. The backend extracts recurring structure, tone, constraints, and examples from real source material.",
+    visual: "sources",
     points: [
       {
-        label: "Risk scoring",
-        text: "Prioritize regressions by severity, blast radius, and customer impact.",
+        label: "Grounded extraction",
+        text: "The workflow starts from evidence in the creator corpus, not a generic scaffold or random prompt.",
       },
       {
-        label: "Launch commands",
-        text: "Coordinate approvals, reruns, and rollback readiness from the same pane.",
+        label: "Focused entrypoint",
+        text: "It keeps SKILL.md concise and pushes bulky detail into references/ for progressive disclosure.",
       },
     ],
   },
   {
-    title: "QA Lead",
-    body: "Track noisy failures, stabilize brittle flows, and direct focused review where coverage actually matters.",
-    image:
-      "https://framerusercontent.com/images/1sNt17gI1wQy2QX2W9gzW7vZvc0.png?scale-down-to=1024",
-    imageAlt: "QA lead review card",
-    imageClassName: "shotProfile",
+    title: "Generate from multiple inputs",
+    body: "The active FastAPI backend supports raw pasted content plus Twitter/X and YouTube ingestion, then folds everything into the same generation flow.",
+    visual: "inputs",
     list: [
-      "Cluster similar failures into one triage lane.",
-      "Review high-signal screenshots before escalating to engineering.",
-      "Balance browser coverage without duplicating effort.",
+      "Use v1 for raw pasted creator content.",
+      "Use v2 for raw content plus Twitter/X and YouTube ingestion.",
+      "Return generated files directly in the API response.",
     ],
   },
   {
-    title: "Engineering Manager",
-    body: "Keep shipping velocity high with concise release evidence, workflow ownership, and visible test health trends.",
-    image:
-      "https://framerusercontent.com/images/TXpGJZ3PoC9dMmdc2h7Rl3SZlU.png?scale-down-to=1024",
-    imageAlt: "Engineering release comparison chart",
-    imageClassName: "shotChart",
+    title: "Export reusable skill bundles",
+    body: "Persist bundles, create zip exports, and hand off a SKILL.md-centered package that Codex and Claude Code can both consume.",
+    visual: "bundle",
     points: [
       {
-        label: "Release analytics",
-        text: "Track adoption, escape rate, and test confidence over time.",
+        label: "Portable shape",
+        text: "Generated output centers on SKILL.md, references/, and optional agents/openai.yaml metadata.",
       },
       {
-        label: "Issue routing",
-        text: "Trigger focused handoffs when ownership or service boundaries change.",
+        label: "Workflow reuse",
+        text: "Reuse the same grounded skill across sessions, projects, and tools instead of rewriting context every time.",
       },
     ],
   },
@@ -94,57 +85,195 @@ const workflowCards: WorkflowCard[] = [
 const insightCards = [
   {
     kind: "metric",
-    eyebrow: "Release automation",
-    stat: "92%",
-    body: "Faster coordination than spread-out ticket boards and disconnected browser labs.",
+    eyebrow: "Progressive disclosure",
+    stat: "1 bundle",
+    body: "Keep the entrypoint focused and move large examples, sources, and framework notes into references/.",
   },
   {
     kind: "highlight",
-    title: "Customer-facing checkout touched",
-    body: "Escalate priority automatically when a critical path changes inside the release branch.",
+    title: "Grounded beats generic",
+    body: "This project is strongest when you already have creator material and want a reusable skill extracted from evidence.",
   },
   {
     kind: "team",
-    title: "Cross-team readiness",
-    body: "Keep product, engineering, and support aligned with visible launch context and shared evidence.",
+    title: "Works across tools",
+    body: "The generated package is shaped for skills-compatible tools such as Codex and Claude Code.",
   },
 ] as const;
 
 const trustStats = [
   {
-    value: "84%",
-    text: "Active users checking the release workspace every month",
+    value: "v1/v2",
+    text: "The unified backend exposes versioned workflows for raw content and multi-source ingestion.",
   },
   {
-    value: "4.9",
-    text: "Average rating from 1,938 customers using Creator Skill Generator in production",
+    value: "ZIP",
+    text: "Generated skills can be returned, persisted, listed, fetched, exported, and deleted.",
   },
 ];
 
-const growthCards = [
-  {
-    title: "Critical path monitoring",
-    body: "Track checkout, auth, and onboarding changes before they hit production.",
-    image:
-      "https://framerusercontent.com/images/ChkmE2RxM5sdA7F3c95T0NIHND4.png?scale-down-to=512",
-  },
-  {
-    title: "Launch-safe evidence",
-    body: "Bundle screenshots, logs, and approvals into one clean release review.",
-    image:
-      "https://framerusercontent.com/images/DrKwoytI1bxLWBhRSDKAowGRTwQ.png?scale-down-to=512",
-  },
-] as const;
+function renderWorkflowVisual(visual: WorkflowCard["visual"]) {
+  if (visual === "sources") {
+    return (
+      <div className={`${styles.workflowShell} ${styles.sourcesShell}`}>
+        <div className={styles.workflowShellHeader}>
+          <span>Creator inputs</span>
+          <span>3 sources</span>
+        </div>
 
-const proofPortraitSrc =
-  "https://framerusercontent.com/images/sOZtIoamimFQQsbKPa1tUlrMiYA.png?scale-down-to=2048";
-const proofLogoSrc =
-  "https://framerusercontent.com/images/DyMne4e4YdUulsVMBOQXzGH36fs.png";
+        <div className={styles.sourceList}>
+          <article className={styles.sourceItem}>
+            <span className={`${styles.sourceBadge} ${styles.sourceBadgeYoutube}`}>YT</span>
+            <div className={styles.sourceMeta}>
+              <strong>YouTube transcript</strong>
+              <small>22 segments imported</small>
+            </div>
+          </article>
+          <article className={styles.sourceItem}>
+            <span className={`${styles.sourceBadge} ${styles.sourceBadgeTwitter}`}>X</span>
+            <div className={styles.sourceMeta}>
+              <strong>Twitter/X thread</strong>
+              <small>9 posts clustered</small>
+            </div>
+          </article>
+          <article className={styles.sourceItem}>
+            <span className={`${styles.sourceBadge} ${styles.sourceBadgePaste}`}>TXT</span>
+            <div className={styles.sourceMeta}>
+              <strong>Pasted creator notes</strong>
+              <small>4 long-form examples</small>
+            </div>
+          </article>
+        </div>
+
+        <div className={styles.extractGrid}>
+          <div className={styles.extractCard}>
+            <small>Tone pattern</small>
+            <strong>direct + repeatable</strong>
+            <span className={styles.extractBar}>
+              <span style={{ width: "78%" }} />
+            </span>
+          </div>
+          <div className={styles.extractCard}>
+            <small>Format signal</small>
+            <strong>hook / proof / CTA</strong>
+            <span className={styles.extractBar}>
+              <span style={{ width: "86%" }} />
+            </span>
+          </div>
+          <div className={styles.extractCard}>
+            <small>Constraint fit</small>
+            <strong>references-ready</strong>
+            <span className={styles.extractBar}>
+              <span style={{ width: "64%" }} />
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (visual === "inputs") {
+    return (
+      <div className={`${styles.workflowShell} ${styles.inputsShell}`}>
+        <div className={styles.workflowShellHeader}>
+          <span>Generation flow</span>
+          <span>multi-source</span>
+        </div>
+
+        <div className={styles.inputsCanvas}>
+          <div className={styles.inputsSourceStack}>
+            <article className={styles.flowSourceCard}>
+              <span className={`${styles.flowSourcePill} ${styles.flowSourcePaste}`}>paste</span>
+              <strong>Raw creator text</strong>
+              <small>scripts, posts, transcripts</small>
+            </article>
+            <article className={styles.flowSourceCard}>
+              <span className={`${styles.flowSourcePill} ${styles.flowSourceV1}`}>v1</span>
+              <strong>Direct parser</strong>
+              <small>fast structure extraction</small>
+            </article>
+            <article className={styles.flowSourceCard}>
+              <span className={`${styles.flowSourcePill} ${styles.flowSourceV2}`}>v2</span>
+              <strong>Social + video</strong>
+              <small>Twitter/X and YouTube ingestion</small>
+            </article>
+          </div>
+
+          <div className={styles.flowCoreCard}>
+            <span className={styles.flowCoreLabel}>Merge engine</span>
+            <div>
+              <strong>Pattern assembly</strong>
+              <small>tone, structure, workflow, constraints</small>
+            </div>
+            <div className={styles.flowCoreGrid} aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className={styles.flowChipRow}>
+              <span>tone</span>
+              <span>examples</span>
+              <span>constraints</span>
+            </div>
+          </div>
+        </div>
+
+        <article className={styles.flowResultCard}>
+          <div>
+            <span className={styles.flowResultLabel}>Bundle ready</span>
+            <strong>Grounded skill bundle</strong>
+            <small>consistent across every source path</small>
+          </div>
+          <div className={styles.flowResultTags}>
+            <span>SKILL.md</span>
+            <span>references/</span>
+            <span>zip</span>
+          </div>
+        </article>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${styles.workflowShell} ${styles.bundleShell}`}>
+      <div className={styles.workflowShellHeader}>
+        <span>Generated package</span>
+        <span>portable export</span>
+      </div>
+
+      <div className={styles.bundleTree}>
+        <div className={`${styles.bundleTreeItem} ${styles.bundleTreeItemActive}`}>
+          <span>SKILL.md</span>
+          <small>entrypoint</small>
+        </div>
+        <div className={styles.bundleTreeItem}>
+          <span>references/framework.md</span>
+          <small>loaded on demand</small>
+        </div>
+        <div className={styles.bundleTreeItem}>
+          <span>references/examples.md</span>
+          <small>source-backed examples</small>
+        </div>
+        <div className={styles.bundleTreeItem}>
+          <span>agents/openai.yaml</span>
+          <small>optional metadata</small>
+        </div>
+      </div>
+
+      <div className={styles.bundleExportCard}>
+        <span className={styles.bundleChip}>ZIP ready</span>
+        <strong>creator-skill-pack.zip</strong>
+        <small>folder + export artifact</small>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const reduceMotion = useReducedMotion();
 
-  const revealViewport = { once: true, amount: 0.28 };
+  const revealViewport = { once: true, amount: 0.16 };
   const hoverEase = [0.22, 1, 0.36, 1] as const;
 
   const spring200 = (delay = 0) =>
@@ -202,51 +331,37 @@ export default function Home() {
         transition={spring200(0.6)}
       />
 
-      <header className={styles.siteHeader}>
-        <a className={styles.brand} href="#top" aria-label="Creator Skill Generator home">
-          <span className={styles.brandMark} aria-hidden="true" />
-          <span className={styles.brandWord}>Creator Skill Generator</span>
-        </a>
-
-        <nav className={styles.mainNav} aria-label="Primary">
-          {navItems.map((item) => (
-            <a key={item.label} href={item.href}>
-              {item.label}
-            </a>
-          ))}
-        </nav>
-
-        <a className={`${styles.button} ${styles.buttonDark} ${styles.headerButton}`} href="#cta">
-          <span>Get This Layout</span>
-          <span className={styles.buttonIcon} aria-hidden="true">
-            →
-          </span>
-        </a>
-      </header>
+      <SiteHeader currentPage="home" />
 
       <main id="top" className={styles.main}>
         <section className={styles.heroSection}>
           <motion.div className={styles.heroCopy} {...fadeUp(0.6, 50)}>
-            <p className={styles.eyebrow}>Release control platform</p>
-            <h1>Run every release from one clean QA app.</h1>
+            <p className={styles.eyebrow}>Source-driven skill builder</p>
+            <h1>
+              <span className={styles.heroLine}>Creator material,</span>
+              <span className={styles.heroLine}>turned into</span>
+              <span className={styles.heroLine}>
+                reusable <span className={styles.heroAccent}>skills.</span>
+              </span>
+            </h1>
             <p className={styles.heroText}>
-              Monitor regressions, review critical flows, and approve launches
-              from one clear control surface.
+              Creator Skill Generator turns creator corpora into portable,
+              SKILL.md-centered packages that can be reused in Codex and Claude Code.
             </p>
 
             <div className={styles.heroActions}>
-              <a className={`${styles.button} ${styles.buttonDark}`} href="#pricing">
-                <span>Start Free Trial</span>
+              <Link className={`${styles.button} ${styles.buttonDark}`} href="/create-new-skill">
+                <span>Create a Skill</span>
                 <span className={styles.buttonIcon} aria-hidden="true">
                   →
                 </span>
-              </a>
-              <a className={`${styles.button} ${styles.buttonGhost}`} href="#proof">
-                <span>Book a Demo</span>
+              </Link>
+              <Link className={`${styles.button} ${styles.buttonGhost}`} href="/skills">
+                <span>Browse Skills</span>
                 <span className={styles.buttonGhostIcon} aria-hidden="true">
                   →
                 </span>
-              </a>
+              </Link>
             </div>
           </motion.div>
 
@@ -267,43 +382,43 @@ export default function Home() {
                 <div className={styles.sidebarGroup}>
                   <span className={styles.sidebarLabel}>Main menu</span>
                   <span className={`${styles.sidebarItem} ${styles.sidebarItemActive}`}>
-                    Dashboard
+                    Sources
                   </span>
-                  <span className={styles.sidebarItem}>Suites</span>
-                  <span className={styles.sidebarItem}>Releases</span>
-                  <span className={styles.sidebarItem}>Owners</span>
+                  <span className={styles.sidebarItem}>Analysis</span>
+                  <span className={styles.sidebarItem}>Bundles</span>
+                  <span className={styles.sidebarItem}>Exports</span>
                 </div>
 
                 <div className={styles.sidebarGroup}>
                   <span className={styles.sidebarLabel}>Signals</span>
-                  <span className={styles.sidebarItem}>Browsers</span>
-                  <span className={styles.sidebarItem}>Escapes</span>
+                  <span className={styles.sidebarItem}>Twitter/X</span>
+                  <span className={styles.sidebarItem}>YouTube</span>
                 </div>
               </div>
 
               <div className={styles.dashboardMain}>
                 <div className={styles.dashboardHeader}>
-                  <span className={styles.dashboardTitle}>Release overview</span>
-                  <span className={styles.liveBadge}>Live sync</span>
+                  <span className={styles.dashboardTitle}>Generation overview</span>
+                  <span className={styles.liveBadge}>Backend first</span>
                 </div>
 
                 <div className={styles.dashboardStats}>
                   <article className={styles.statCard}>
-                    <span>Suite health</span>
-                    <strong>98.4%</strong>
-                    <small>+6.2% in the last sprint</small>
+                    <span>Input modes</span>
+                    <strong>3</strong>
+                    <small>raw text, Twitter/X, YouTube</small>
                   </article>
                   <article className={styles.statCard}>
-                    <span>Open regressions</span>
-                    <strong>13</strong>
-                    <small>4 critical paths in review</small>
+                    <span>Bundle parts</span>
+                    <strong>4</strong>
+                    <small>SKILL.md, refs, agents, zip</small>
                   </article>
                 </div>
 
                 <article className={styles.chartCard}>
                   <div className={styles.chartHeader}>
-                    <span>Release confidence</span>
-                    <span>March, 2026</span>
+                    <span>Unified backend</span>
+                    <span>v1 + v2</span>
                   </div>
                   <div className={styles.chartBars} aria-hidden="true">
                     <span />
@@ -325,7 +440,7 @@ export default function Home() {
               {...hoverLift(-4, 1.01)}
             >
               <span className={styles.playRing} aria-hidden="true" />
-              <span>Watch Demo</span>
+              <span>Preview SKILL.md</span>
             </motion.div>
           </div>
         </section>
@@ -353,7 +468,6 @@ export default function Home() {
               key={card.title}
               className={`${styles.workflowCard} ${index % 2 === 1 ? styles.workflowCardReverse : ""}`}
               {...fadeUp(0.1 + index * 0.06, 50)}
-              {...hoverLift(-10, 1.008)}
             >
               <div className={styles.workflowCopy}>
                 <h2>{card.title}</h2>
@@ -378,101 +492,19 @@ export default function Home() {
               </div>
 
               <div className={styles.workflowVisual}>
-                <div className={styles.workflowFrame}>
-                  <img
-                    className={`${styles.workflowShot} ${styles[card.imageClassName]}`}
-                    src={card.image}
-                    alt={card.imageAlt}
-                  />
-                </div>
+                <div className={styles.workflowFrame}>{renderWorkflowVisual(card.visual)}</div>
               </div>
             </motion.article>
           ))}
         </section>
 
-        <section className={styles.growthSection}>
-          <motion.div className={styles.growthHeading} {...fadeUp(0.08, 50)}>
-            <h2>Release clarity is the main priority</h2>
-            <p>
-              Keep browser coverage, owner handoff, and critical-path checks aligned
-              before the launch window opens.
-            </p>
-          </motion.div>
-
-          <div className={styles.growthGrid}>
-            {growthCards.map((card, index) => (
-              <motion.article
-                key={card.title}
-                className={styles.growthCard}
-                {...fadeUp(0.12 + index * 0.08, 50)}
-                {...hoverLift(-8, 1.01)}
-              >
-                <img className={styles.growthImage} src={card.image} alt={card.title} />
-                <div className={styles.growthContent}>
-                  <h4>{card.title}</h4>
-                  <p>{card.body}</p>
-                  <a className={styles.growthLink} href="#proof">
-                    Review launch story
-                  </a>
-                </div>
-              </motion.article>
-            ))}
-          </div>
-        </section>
-
-        <motion.section
-          id="proof"
-          className={styles.proofBand}
-          {...fadeUp(0.12, 50)}
-          {...hoverLift(-4, 1.004)}
-        >
-          <div className={styles.portraitPanel}>
-            <img
-              className={styles.portraitImage}
-              src={proofPortraitSrc}
-              alt="Customer story portrait"
-            />
-          </div>
-
-          <div className={styles.proofCopy}>
-            <h3>
-              “Creator Skill Generator became the one place our team checks regressions,
-              validates critical paths, and approves releases. We saw a 30% lift
-              in shipping confidence within a quarter.”
-            </h3>
-
-            <div className={styles.proofMeta}>
-              <div>
-                <strong>Stefan Persson</strong>
-                <span>Product Manager</span>
-              </div>
-              <img className={styles.proofLogoImage} src={proofLogoSrc} alt="Alt+Shift" />
-            </div>
-
-            <div className={styles.proofStats}>
-              <div>
-                <strong>284%</strong>
-                <span>Revenue boost in the last 30 days</span>
-              </div>
-              <div>
-                <strong>76%</strong>
-                <span>Conversion rate from all active channels</span>
-              </div>
-            </div>
-
-            <a className={styles.proofStoryLink} href="#pricing">
-              Read Full Story
-            </a>
-          </div>
-        </motion.section>
-
-        <section className={styles.insightSection}>
+        <section id="why" className={styles.insightSection}>
           <motion.div className={styles.sectionHeading} {...fadeUp(0.08, 50)}>
-            <p className={styles.eyebrow}>What sets us apart</p>
-            <h2>Built for sharp operators, not cluttered QA dashboards.</h2>
+            <p className={styles.eyebrow}>Why skills win</p>
+            <h2>Why this project exists</h2>
             <p>
-              Real-time signals, cleaner evidence capture, and action-first
-              release summaries keep the whole team aligned.
+              Repeated creator prompting is slow, inconsistent, and hard to reuse.
+              This project turns repeated creator context into a reusable skill package.
             </p>
           </motion.div>
 
@@ -508,11 +540,11 @@ export default function Home() {
 
         <section id="pricing" className={styles.trustSection}>
           <motion.div className={styles.sectionHeading} {...fadeUp(0.08, 50)}>
-            <p className={styles.eyebrow}>Customer proof</p>
-            <h2>Trusted by 25,000+ happy customers</h2>
+            <p className={styles.eyebrow}>Repository status</p>
+            <h2>Backend first, website second</h2>
             <p>
-              Join fast-moving teams using Creator Skill Generator to run cleaner releases
-              with fewer tools, sharper evidence, and better visibility.
+              The website now proxies the FastAPI backend and exposes generator,
+              saved-skill, and detail views on top of the existing API contract.
             </p>
           </motion.div>
 
@@ -533,20 +565,20 @@ export default function Home() {
 
         <motion.section id="cta" className={styles.ctaBand} {...fadeUp(0.08, 50)}>
           <div>
-            <p className={styles.eyebrow}>Start now</p>
-            <h2>Start getting cleaner releases</h2>
+            <p className={styles.eyebrow}>Next step</p>
+            <h2>Create your first skill bundle</h2>
             <p>
-              Unlock the potential of your QA team with a faster, more visual,
-              more accountable release workspace.
+              Start with pasted creator text, Twitter/X, or YouTube transcripts,
+              then export a reusable SKILL.md-centered bundle.
             </p>
           </div>
 
-          <a className={`${styles.button} ${styles.buttonDark}`} href="#top">
-            <span>Get This Layout</span>
+          <Link className={`${styles.button} ${styles.buttonDark}`} href="/create-new-skill">
+            <span>Create a Skill</span>
             <span className={styles.buttonIcon} aria-hidden="true">
               →
             </span>
-          </a>
+          </Link>
         </motion.section>
       </main>
 
@@ -566,37 +598,38 @@ export default function Home() {
                 {item.label}
               </a>
             ))}
+            <Link href="/about">About</Link>
+            <Link href="/skills">Skills</Link>
+            <Link href="/create-new-skill">Create</Link>
           </div>
           <div className={styles.footerColumn}>
-            <p className={styles.footerTitle}>Template</p>
-            <a href="#features">Feature Page</a>
-            <a href="#workflows">Case Studies</a>
-            <a href="#proof">Book a Demo</a>
-            <a href="#pricing">Changelog</a>
+            <p className={styles.footerTitle}>Repository</p>
+            <a href="#features">Why Skills</a>
+            <a href="#workflows">Generation Flow</a>
+            <a href="#why">Why It Exists</a>
+            <a href="#pricing">Backend Today</a>
           </div>
         </motion.div>
 
         <div className={styles.footerContact}>
           <motion.div className={styles.footerSocial} {...slideLeft(0.18, -30)}>
-            <p className={styles.footerSocialTitle}>Find on Social Media</p>
+            <p className={styles.footerSocialTitle}>Jump to Sections</p>
             <div className={styles.socialRow}>
-              <a href="https://facebook.com" target="_blank" rel="noreferrer">
-                fb
+              <a href="#features">
+                ov
               </a>
-              <a href="https://pinterest.com" target="_blank" rel="noreferrer">
-                pi
+              <a href="#workflows">
+                wf
               </a>
-              <a href="https://linkedin.com" target="_blank" rel="noreferrer">
-                in
+              <a href="#pricing">
+                api
               </a>
             </div>
           </motion.div>
 
           <motion.div className={styles.contactLinks} {...slideLeft(0.24, -30)}>
-            <a href="mailto:hello@creatorskillgenerator.com">
-              hello@creatorskillgenerator.com
-            </a>
-            <a href="tel:+0214802025906">+021 480-202-5906</a>
+            <Link href="/create-new-skill">Create a skill</Link>
+            <Link href="/skills">Browse saved bundles</Link>
           </motion.div>
         </div>
       </footer>

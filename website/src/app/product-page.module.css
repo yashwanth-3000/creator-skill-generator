@@ -1,0 +1,170 @@
+.page {
+  display: grid;
+  gap: 24px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.heroCard,
+.sideCard {
+  border: 1px solid rgba(13, 18, 33, 0.08);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 40px rgba(13, 18, 33, 0.06);
+}
+
+.heroCard {
+  padding: 28px;
+}
+
+.sideCard {
+  padding: 24px;
+}
+
+.kicker {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 20px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #f75c30;
+}
+
+.title {
+  margin-top: 10px;
+  font-family: var(--font-host-grotesk), sans-serif;
+  font-size: clamp(2.4rem, 3vw, 4rem);
+  font-weight: 500;
+  line-height: 0.94;
+  letter-spacing: -1.6px;
+  color: #0d1221;
+}
+
+.lead {
+  margin-top: 18px;
+  max-width: 60ch;
+  font-size: 16px;
+  line-height: 28px;
+  color: #5b5a66;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(13, 18, 33, 0.08);
+  background: #fcfbfa;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+  color: #0d1221;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.metricCard {
+  display: grid;
+  gap: 4px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(249, 246, 244, 0.96) 0%, rgba(255, 255, 255, 0.88) 100%);
+  border: 1px solid rgba(13, 18, 33, 0.06);
+}
+
+.metricCard strong {
+  font-family: var(--font-host-grotesk), sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.8px;
+  color: #0d1221;
+}
+
+.metricCard span {
+  font-size: 13px;
+  line-height: 20px;
+  color: #5b5a66;
+}
+
+.sideCardTitle {
+  font-family: var(--font-host-grotesk), sans-serif;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -1px;
+  color: #0d1221;
+}
+
+.sideCardLead {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 24px;
+  color: #5b5a66;
+}
+
+.sideList {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.sideItem {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #fcfbfa;
+  border: 1px solid rgba(13, 18, 33, 0.08);
+}
+
+.sideItem code {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  color: #4d53ff;
+}
+
+.sideItem span {
+  font-size: 13px;
+  line-height: 20px;
+  color: #37373d;
+}
+
+.content {
+  display: grid;
+}
+
+@media (max-width: 1023px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .heroCard,
+  .sideCard {
+    padding: 22px;
+  }
+
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+}

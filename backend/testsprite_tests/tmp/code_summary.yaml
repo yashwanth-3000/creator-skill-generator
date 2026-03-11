@@ -3,170 +3,218 @@ type: backend
 tech_stack:
   - python
   - fastapi
-  - pydantic
   - crewai
-  - httpx
-  - youtube-transcript-api
+  - pydantic-v2
   - uvicorn
 features:
-  - name: Health and Info
-    description: Root service info and health check endpoints
+  - name: Health & Service Info
+    description: Root and health endpoints return service metadata
     files:
       - main.py
     endpoints:
       - method: GET
-        path: /
-        description: Service info with endpoint map and workflow descriptions
-        auth_required: false
-        response_schema:
-          "200": ServiceInfo
-      - method: GET
         path: /api/health
-        description: Health check returning status ok
+        description: Health check endpoint
         auth_required: false
         response_schema:
-          "200": HealthResponse
-    depends_on: []
-
-  - name: V1 Skill Generation
-    description: Generate skill packages from raw pasted creator content
+          "200": '{"status":"ok","service":"Creator Skill Backend","version":"1.0.0"}'
+      - method: GET
+        path: /
+        description: Root service info with API docs links
+        auth_required: false
+        response_schema:
+          "200": '{"service":"...","version":"...","workflows":{...},"endpoints":{...}}'
+  - name: Raw Paste Skill Generation
+    description: Generate skill from pasted creator content
     files:
       - main.py
-      - app/service.py
       - app/crew.py
+      - app/service.py
       - app/schemas.py
     endpoints:
       - method: POST
         path: /api/v1/generate-skill
-        description: Generate a skill package from pasted content (min 40 chars)
+        description: Generate skill bundle from raw pasted content (60-120s)
         auth_required: false
         request_schema:
           body:
-            creator_content: string (min 40 chars, required)
+            creator_content: string (min 40 chars)
             desired_skill_name: string (optional)
             target_outcome: string (optional)
             audience: string (optional)
+            include_openai_yaml: boolean (default true)
             persist_to_disk: boolean (default true)
             include_zip: boolean (default true)
         response_schema:
           "200": GenerateSkillResponse
           "422": Pydantic validation error (string_too_short)
           "500": Internal server error
-    depends_on: []
-
-  - name: V2 Twitter Integration
-    description: Fetch last 25 tweets from a Twitter/X user and generate a skill
-    files:
-      - main.py
-      - app/twitter_client.py
-      - app/schemas.py
-    endpoints:
       - method: POST
-        path: /api/v2/generate-skill/twitter
-        description: Generate skill from Twitter user's last 25 tweets (no retweets)
+        path: /api/v2/generate-skill
+        description: Same as v1 generate skill
         auth_required: false
         request_schema:
           body:
-            twitter_username: string (1-15 chars, required)
+            creator_content: string (min 40 chars)
             desired_skill_name: string (optional)
-            target_outcome: string (optional)
+        response_schema:
+          "200": GenerateSkillResponse
+          "422": Pydantic validation error
+  - name: Raw Paste Skill Generation SSE Stream
+    description: Generate skill from pasted content with real-time SSE events
+    files:
+      - main.py
+      - app/crew.py
+      - app/service.py
+    endpoints:
+      - method: POST
+        path: /api/v1/generate-skill/stream
+        description: SSE stream for raw paste skill generation
+        auth_required: false
+        request_schema:
+          body:
+            creator_content: string (min 40 chars)
+            desired_skill_name: string (optional)
+        response_schema:
+          "200": "text/event-stream with SSE events (crew_start, task_start, step, task_done, crew_done, result, done)"
+          "422": Pydantic validation error
+      - method: POST
+        path: /api/v2/generate-skill/stream
+        description: SSE stream for raw paste skill generation (v2)
+        auth_required: false
+        request_schema:
+          body:
+            creator_content: string (min 40 chars)
+            desired_skill_name: string (optional)
+        response_schema:
+          "200": "text/event-stream with SSE events"
+          "422": Pydantic validation error
+  - name: Twitter/X Skill Generation
+    description: Fetch tweets and generate skill from Twitter user content
+    files:
+      - main.py
+      - app/twitter_client.py
+      - app/crew.py
+      - app/service.py
+    endpoints:
+      - method: POST
+        path: /api/v2/generate-skill/twitter
+        description: Generate skill from Twitter user tweets (60-120s)
+        auth_required: false
+        request_schema:
+          body:
+            twitter_username: string (min 1, max 15 chars)
+            desired_skill_name: string (optional)
         response_schema:
           "200": GenerateSkillResponse with source_metadata
           "400": X_BEARER_TOKEN not configured or no tweets found
           "422": Pydantic validation error
-          "502": X API error (auth, not found, rate limit)
-    depends_on:
-      - V1 Skill Generation
-
-  - name: V2 YouTube Integration
-    description: Fetch transcripts from YouTube URLs and generate a skill
+          "502": X API upstream error (user not found)
+  - name: Twitter/X Skill Generation SSE Stream
+    description: Fetch tweets and generate skill with real-time SSE events
     files:
       - main.py
-      - app/youtube_client.py
-      - app/schemas.py
+      - app/twitter_client.py
+      - app/crew.py
+      - app/service.py
     endpoints:
       - method: POST
-        path: /api/v2/generate-skill/youtube
-        description: Generate skill from YouTube video transcripts
+        path: /api/v2/generate-skill/twitter/stream
+        description: SSE stream for Twitter skill generation
         auth_required: false
         request_schema:
           body:
-            youtube_urls: list of strings (min 1 item, required)
+            twitter_username: string (min 1, max 15 chars)
             desired_skill_name: string (optional)
         response_schema:
-          "200": GenerateSkillResponse with source_metadata and warnings
-          "400": YouTubeError (no valid URLs, no transcripts)
+          "200": "text/event-stream with SSE events"
+          "400": X_BEARER_TOKEN not configured
           "422": Pydantic validation error
-    depends_on:
-      - V1 Skill Generation
-
-  - name: Skill Listing and Detail
-    description: List all generated skills or get detail for a single skill
+          "502": X API upstream error
+  - name: YouTube Skill Generation
+    description: Fetch transcripts and generate skill from YouTube videos
     files:
       - main.py
-      - app/storage.py
+      - app/youtube_client.py
+      - app/crew.py
+      - app/service.py
+    endpoints:
+      - method: POST
+        path: /api/v2/generate-skill/youtube
+        description: Generate skill from YouTube video transcripts (60-200s)
+        auth_required: false
+        request_schema:
+          body:
+            youtube_urls: array of strings (min 1 item)
+            desired_skill_name: string (optional)
+        response_schema:
+          "200": GenerateSkillResponse with source_metadata
+          "400": Invalid YouTube URL or YouTubeError
+          "422": Pydantic validation error (too_short for empty array)
+  - name: YouTube Skill Generation SSE Stream
+    description: Fetch transcripts and generate skill with real-time SSE events
+    files:
+      - main.py
+      - app/youtube_client.py
+      - app/crew.py
+      - app/service.py
+    endpoints:
+      - method: POST
+        path: /api/v2/generate-skill/youtube/stream
+        description: SSE stream for YouTube skill generation
+        auth_required: false
+        request_schema:
+          body:
+            youtube_urls: array of strings (min 1 item)
+            desired_skill_name: string (optional)
+        response_schema:
+          "200": "text/event-stream with SSE events"
+          "400": Invalid YouTube URL
+          "422": Pydantic validation error
+  - name: Skill Listing & Detail
+    description: List and retrieve generated skills
+    files:
+      - main.py
     endpoints:
       - method: GET
         path: /api/v1/skills
-        description: List all generated skills with file summaries (no content)
+        description: List all generated skills with metadata
         auth_required: false
         response_schema:
-          "200": SkillList with count
+          "200": '{"skills":[...],"count":N}'
       - method: GET
         path: /api/v1/skills/{skill_name}
-        description: Get full detail for a single skill including file contents
+        description: Get full skill detail with file contents
         auth_required: false
         response_schema:
-          "200": SkillDetail with files and content
+          "200": SkillDetail with files array
           "404": Skill not found
       - method: DELETE
         path: /api/v1/skills/{skill_name}
-        description: Delete a generated skill directory and its zip
+        description: Delete a skill and its zip
         auth_required: false
         response_schema:
-          "200": Deletion confirmation
+          "200": '{"deleted":"skill_name"}'
           "404": Skill not found
-      - method: GET
-        path: /api/v2/skills
-        description: Same as v1 skills list
-        auth_required: false
-        response_schema:
-          "200": SkillList with count
-      - method: GET
-        path: /api/v2/skills/{skill_name}
-        description: Same as v1 skill detail
-        auth_required: false
-        response_schema:
-          "200": SkillDetail
-          "404": Skill not found
-      - method: DELETE
-        path: /api/v2/skills/{skill_name}
-        description: Same as v1 delete skill
-        auth_required: false
-        response_schema:
-          "200": Deletion confirmation
-          "404": Skill not found
-    depends_on: []
-
-  - name: Export and Download
-    description: Download skill files as zip, individual files, or raw content for clipboard
+  - name: Export & Download
+    description: Export skill files as zip or individual downloads
     files:
       - main.py
     endpoints:
       - method: GET
         path: /api/v1/export/{skill_name}/zip
-        description: Download skill package as zip archive
+        description: Download skill as zip archive
         auth_required: false
         response_schema:
-          "200": ZIP file (application/zip)
+          "200": application/zip file
           "404": Zip not found
       - method: GET
         path: /api/v1/export/{skill_name}/{file_path}
-        description: Download a single file from a skill package
+        description: Download single file from a skill
         auth_required: false
         response_schema:
-          "200": File content (text/markdown or text/plain)
-          "400": Invalid path (path traversal attempt)
+          "200": File content
+          "400": Invalid path (path traversal)
           "404": File not found
       - method: POST
         path: /api/v1/export/copy
@@ -174,62 +222,26 @@ features:
         auth_required: false
         request_schema:
           body:
-            skill_name: string (required)
-            file_path: string (required)
-        response_schema:
-          "200": JSON with content and file_path
-          "400": Invalid path
-          "404": File not found
-      - method: GET
-        path: /api/v2/export/{skill_name}/zip
-        description: Same as v1 export zip
-        auth_required: false
-        response_schema:
-          "200": ZIP file
-          "404": Zip not found
-      - method: GET
-        path: /api/v2/export/{skill_name}/{file_path}
-        description: Same as v1 export file
-        auth_required: false
-        response_schema:
-          "200": File content
-          "400": Invalid path
-          "404": File not found
-      - method: POST
-        path: /api/v2/export/copy
-        description: Same as v1 copy content
-        auth_required: false
-        request_schema:
-          body:
             skill_name: string
             file_path: string
         response_schema:
-          "200": JSON with content
+          "200": '{"content":"...","file_path":"..."}'
           "400": Invalid path
           "404": File not found
-    depends_on:
-      - Skill Listing and Detail
-
-  - name: Security Middleware
-    description: Path traversal guard blocks requests with ".." in the URL path
+  - name: Security - Path Traversal Protection
+    description: Middleware blocks requests containing ".." in URL paths
     files:
       - main.py
-    endpoints:
-      - method: GET
-        path: /api/v1/export/..%2F..%2Fetc/passwd
-        description: Path traversal attempt — blocked by middleware
-        auth_required: false
-        response_schema:
-          "400": Invalid path
-    depends_on: []
-
+    endpoints: []
+    depends_on:
+      - Export & Download
 known_limitations:
-  - issue: CrewAI generation takes 60-120 seconds per call
-    location: app/service.py
-    impact: Requests to generate-skill endpoints may timeout on short HTTP timeouts
-  - issue: Generated skills are stored on ephemeral filesystem
-    location: app/storage.py
-    impact: Skills are lost on Railway redeploy
-  - issue: V1 and V2 share the same generated_skills directory
-    location: app/config.py
-    impact: Skills from both workflows appear in both /api/v1/skills and /api/v2/skills
+  - issue: CrewAI pipeline takes 60-120s, exceeding TestSprite 30s tunnel timeout
+    location: app/crew.py
+    impact: Generation endpoints cannot be fully tested through TestSprite tunnel
+  - issue: X_BEARER_TOKEN is configured on server, cannot test missing-token path
+    location: main.py
+    impact: TC for missing bearer token will always trigger real API call
+  - issue: SSE streaming endpoints return text/event-stream not JSON
+    location: main.py
+    impact: Tests must parse SSE format (event + data lines) not standard JSON
