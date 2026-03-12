@@ -3,8 +3,15 @@
 import Link from "next/link";
 import { useDeferredValue, useEffect, useState, useTransition } from "react";
 import styles from "./skills-browser.module.css";
-import { zipDownloadUrl } from "@/lib/frontend-api";
 import { fetchSkillsFromSupabase, type SkillRow } from "@/lib/supabase";
+
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ??
+  "https://creator-skill-backend-production.up.railway.app";
+
+function zipDownloadUrl(skillName: string) {
+  return `${BACKEND_URL}/api/v1/export/${encodeURIComponent(skillName)}/zip`;
+}
 
 export function SkillsBrowser() {
   const [skills, setSkills] = useState<SkillRow[]>([]);

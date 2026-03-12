@@ -8,23 +8,25 @@ import styles from "./skill-detail.module.css";
 import viewerStyles from "./skill-viewer.module.css";
 import { SkillViewer } from "./skill-viewer";
 import {
-  fileDownloadUrl,
-  zipDownloadUrl,
-} from "@/lib/frontend-api";
-import {
   fetchSkillDetailFromSupabase,
   deleteSkillFromSupabase,
   type SkillWithFiles,
 } from "@/lib/supabase";
 
-function buildZipAbsoluteUrl(skillName: string) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  return `${origin}${zipDownloadUrl(skillName)}`;
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ??
+  "https://creator-skill-backend-production.up.railway.app";
+
+function buildZipDirectUrl(skillName: string) {
+  return `${BACKEND_URL}/api/v1/export/${encodeURIComponent(skillName)}/zip`;
 }
 
-function buildCodexInstallCmd(skillName: string) {
-  const zipUrl = buildZipAbsoluteUrl(skillName);
-  return `curl -L "${zipUrl}" -o /tmp/${skillName}.zip && mkdir -p ~/.codex/skills/${skillName} && unzip -o /tmp/${skillName}.zip -d ~/.codex/skills/${skillName}/ && rm /tmp/${skillName}.zip`;
+function buildInstallCmd(skillName: string, tool: "codex" | "claude") {
+  const zipUrl = buildZipDirectUrl(skillName);
+  const skillDir = tool === "codex"
+    ? `~/.codex/skills/${skillName}`
+    : `~/.claude/skills/${skillName}`;
+  return `curl -L "${zipUrl}" -o /tmp/${skillName}.zip && mkdir -p ${skillDir} && unzip -o /tmp/${skillName}.zip -d ${skillDir}/ && rm /tmp/${skillName}.zip`;
 }
 
 type SkillDetailProps = {
@@ -40,10 +42,7 @@ export function SkillDetail({ skillName }: SkillDetailProps) {
   const [copied, setCopied] = useState<"codex" | "claude" | null>(null);
 
   const handleCopy = useCallback((target: "codex" | "claude") => {
-    const cmd = target === "codex"
-      ? buildCodexInstallCmd(skillName)
-      : `curl -L "${buildZipAbsoluteUrl(skillName)}" -o /tmp/${skillName}.zip && mkdir -p ~/.claude/skills/${skillName} && unzip -o /tmp/${skillName}.zip -d ~/.claude/skills/${skillName}/ && rm /tmp/${skillName}.zip`;
-    navigator.clipboard.writeText(cmd);
+    navigator.clipboard.writeText(buildInstallCmd(skillName, target));
     setCopied(target);
     setTimeout(() => setCopied(null), 2000);
   }, [skillName]);
@@ -103,6 +102,13 @@ export function SkillDetail({ skillName }: SkillDetailProps) {
     relative_path: f.relative_path,
     content: f.content,
   })) ?? [];
+
+  const blobDownloadUrl = useCallback((_skillName: string, filePath: string) => {
+    const file = skill?.skill_files.find((f) => f.relative_path === filePath);
+    if (!file) return "#";
+    const blob = new Blob([file.content], { type: "text/plain;charset=utf-8" });
+    return URL.createObjectURL(blob);
+  }, [skill]);
 
   const bundleSidebar = skill ? (
     <div className={viewerStyles.sidebarSection}>
@@ -168,7 +174,7 @@ export function SkillDetail({ skillName }: SkillDetailProps) {
             Refresh
           </button>
           {skill?.has_zip && (
-            <a className={styles.ghostButton} href={zipDownloadUrl(skillName)}>
+            <a className={styles.ghostButton} href={buildZipDirectUrl(skillName)}>
               Download zip
             </a>
           )}
@@ -252,7 +258,7 @@ export function SkillDetail({ skillName }: SkillDetailProps) {
         <SkillViewer
           files={viewerFiles}
           skillName={skill.skill_name}
-          downloadFileUrl={fileDownloadUrl}
+          downloadFileUrl={blobDownloadUrl}
           sidebarTop={bundleSidebar}
         />
       )}

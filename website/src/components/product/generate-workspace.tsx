@@ -6,13 +6,19 @@ import styles from "./generate-workspace.module.css";
 import {
   fetchHealth,
   generateSkill,
-  listSkills,
-  zipDownloadUrl,
 } from "@/lib/frontend-api";
+import { fetchSkillsFromSupabase, type SkillRow } from "@/lib/supabase";
+
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ??
+  "https://creator-skill-backend-production.up.railway.app";
+
+function zipDownloadUrl(skillName: string) {
+  return `${BACKEND_URL}/api/v1/export/${encodeURIComponent(skillName)}/zip`;
+}
 import type {
   GenerateMode,
   GenerateSkillResponse,
-  SkillSummary,
 } from "@/lib/backend-types";
 
 type FormState = {
@@ -127,7 +133,7 @@ export function GenerateWorkspace() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [result, setResult] = useState<GenerateSkillResponse | null>(null);
   const [selectedFile, setSelectedFile] = useState("");
-  const [skills, setSkills] = useState<SkillSummary[]>([]);
+  const [skills, setSkills] = useState<SkillRow[]>([]);
   const [health, setHealth] = useState("checking");
   const [error, setError] = useState<string | null>(null);
   const [copyState, setCopyState] = useState("");
@@ -157,9 +163,9 @@ export function GenerateWorkspace() {
       }
 
       try {
-        const skillsResponse = await listSkills();
+        const rows = await fetchSkillsFromSupabase();
         if (!cancelled) {
-          setSkills(skillsResponse.skills);
+          setSkills(rows);
         }
       } catch {
         if (!cancelled) {
@@ -184,8 +190,8 @@ export function GenerateWorkspace() {
 
   async function refreshSkills() {
     try {
-      const response = await listSkills();
-      setSkills(response.skills);
+      const rows = await fetchSkillsFromSupabase();
+      setSkills(rows);
     } catch {
       setSkills([]);
     }
@@ -495,12 +501,13 @@ export function GenerateWorkspace() {
               </p>
             ) : (
               skills.slice(0, 5).map((skill) => (
-                <Link key={skill.name} className={styles.skillItem} href={`/skills/${skill.name}`}>
+                <Link key={skill.id} className={styles.skillItem} href={`/skills/${skill.skill_name}`}>
                   <div>
-                    <strong>{skill.name}</strong>
+                    <strong>{skill.display_name || skill.skill_name}</strong>
                     <p>
                       {skill.file_count} files
                       {skill.has_zip ? " · zip ready" : ""}
+                      {skill.source_mode !== "raw" ? ` · ${skill.source_mode}` : ""}
                     </p>
                   </div>
                   <span>→</span>

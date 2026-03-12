@@ -2,11 +2,13 @@ import type {
   GenerateMode,
   GenerateSkillResponse,
   HealthResponse,
-  SkillDetail,
-  SkillsListResponse,
 } from "./backend-types";
 
-const API_ROOT = "/api/backend";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ??
+  "https://creator-skill-backend-production.up.railway.app";
+
+const API_ROOT = `${BACKEND_URL}/api`;
 
 type JsonBody = Record<string, unknown>;
 
@@ -39,38 +41,8 @@ async function requestJson<T>(input: string, init?: RequestInit) {
   return (await response.json()) as T;
 }
 
-export function zipDownloadUrl(skillName: string) {
-  return `${API_ROOT}/v1/export/${encodeURIComponent(skillName)}/zip`;
-}
-
-export function fileDownloadUrl(skillName: string, filePath: string) {
-  const encodedPath = filePath
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
-
-  return `${API_ROOT}/v1/export/${encodeURIComponent(skillName)}/${encodedPath}`;
-}
-
 export async function fetchHealth() {
   return requestJson<HealthResponse>(`${API_ROOT}/health`);
-}
-
-export async function listSkills() {
-  return requestJson<SkillsListResponse>(`${API_ROOT}/v1/skills`);
-}
-
-export async function getSkill(skillName: string) {
-  return requestJson<SkillDetail>(
-    `${API_ROOT}/v1/skills/${encodeURIComponent(skillName)}`,
-  );
-}
-
-export async function deleteSkill(skillName: string) {
-  return requestJson<{ deleted: string }>(
-    `${API_ROOT}/v1/skills/${encodeURIComponent(skillName)}`,
-    { method: "DELETE" },
-  );
 }
 
 export async function generateSkill(mode: GenerateMode, payload: JsonBody) {

@@ -4,6 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./page.module.css";
 import { AppFrame } from "@/components/product/app-frame";
 
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ??
+  "https://creator-skill-backend-production.up.railway.app";
+
 type LogEntry = {
   id: number;
   time: string;
@@ -162,7 +166,7 @@ export default function LiveTestPage() {
     if (mode === "twitter") {
       if (!username.trim()) return null;
       return {
-        url: "/api/backend/v2/generate-skill/twitter/stream",
+        url: `${BACKEND_URL}/api/v2/generate-skill/twitter/stream`,
         body: { twitter_username: username.trim(), ...shared },
       };
     }
@@ -174,7 +178,7 @@ export default function LiveTestPage() {
         .filter(Boolean);
       if (urls.length === 0) return null;
       return {
-        url: "/api/backend/v2/generate-skill/youtube/stream",
+        url: `${BACKEND_URL}/api/v2/generate-skill/youtube/stream`,
         body: { youtube_urls: urls, ...shared },
       };
     }
@@ -182,7 +186,7 @@ export default function LiveTestPage() {
     if (mode === "paste") {
       if (pasteContent.trim().length < 40) return null;
       return {
-        url: "/api/backend/v2/generate-skill/stream",
+        url: `${BACKEND_URL}/api/v2/generate-skill/stream`,
         body: {
           creator_content: pasteContent.trim(),
           content_kind: "generic",

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./create-skill-wizard.module.css";
 import viewerStyles from "./skill-viewer.module.css";
 import { SkillViewer } from "./skill-viewer";
-import { fetchHealth, fileDownloadUrl, zipDownloadUrl } from "@/lib/frontend-api";
+import { fetchHealth } from "@/lib/frontend-api";
 import type { GenerateMode, GenerateSkillResponse } from "@/lib/backend-types";
 
 type LogEntry = {
@@ -86,12 +86,18 @@ function formatLogMessage(event: Record<string, unknown>): string {
   return JSON.stringify(event);
 }
 
-const API_ROOT = "/api/backend";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ??
+  "https://creator-skill-backend-production.up.railway.app";
 
 function streamUrl(mode: GenerateMode): string {
-  if (mode === "raw") return `${API_ROOT}/v2/generate-skill/stream`;
-  if (mode === "twitter") return `${API_ROOT}/v2/generate-skill/twitter/stream`;
-  return `${API_ROOT}/v2/generate-skill/youtube/stream`;
+  if (mode === "raw") return `${BACKEND_URL}/api/v2/generate-skill/stream`;
+  if (mode === "twitter") return `${BACKEND_URL}/api/v2/generate-skill/twitter/stream`;
+  return `${BACKEND_URL}/api/v2/generate-skill/youtube/stream`;
+}
+
+function zipDownloadUrl(skillName: string) {
+  return `${BACKEND_URL}/api/v1/export/${encodeURIComponent(skillName)}/zip`;
 }
 
 type FormState = {
@@ -636,7 +642,12 @@ paths:
           <SkillViewer
             files={result.files}
             skillName={result.skill_name}
-            downloadFileUrl={fileDownloadUrl}
+            downloadFileUrl={(_name, filePath) => {
+              const f = result.files.find((x) => x.relative_path === filePath);
+              if (!f) return "#";
+              const blob = new Blob([f.content], { type: "text/plain;charset=utf-8" });
+              return URL.createObjectURL(blob);
+            }}
             sidebarBottom={
               <div className={viewerStyles.sidebarSection}>
                 <p className={viewerStyles.sidebarLabel}>Bundle summary</p>
