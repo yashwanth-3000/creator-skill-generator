@@ -33,8 +33,12 @@ class SkillGenerationService:
         )
         self.db: SupabaseSkillStore | None = None
         if settings.supabase_url and settings.supabase_service_role_key:
-            self.db = SupabaseSkillStore(settings.supabase_url, settings.supabase_service_role_key)
-            logger.info("Supabase store enabled")
+            try:
+                self.db = SupabaseSkillStore(settings.supabase_url, settings.supabase_service_role_key)
+                logger.info("Supabase store enabled")
+            except Exception:
+                logger.exception("Failed to initialize SupabaseSkillStore")
+                self.db = None
         else:
             logger.warning("Supabase env vars missing — skills will NOT be saved to database")
 
@@ -124,7 +128,7 @@ class SkillGenerationService:
                 files=files,
                 warnings=warnings,
             )
-            self._save_to_supabase(response, request)
+            await asyncio.to_thread(self._save_to_supabase, response, request)
             yield f"event: result\ndata: {response.model_dump_json()}\n\n"
 
         yield "event: done\ndata: {}\n\n"

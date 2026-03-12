@@ -1,40 +1,131 @@
 .browser {
   display: grid;
-  gap: 20px;
+  gap: 24px;
 }
 
-.toolbar {
+/* ── unified page header ── */
+.header {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(13, 18, 33, 0.08);
 }
 
-.searchField {
-  flex: 1;
-  display: grid;
-  gap: 8px;
+.headerLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-.searchField span {
-  font-size: 14px;
+.headerTitle {
+  font-family: var(--font-host-grotesk), sans-serif;
+  font-size: 22px;
   font-weight: 600;
-  line-height: 22px;
+  letter-spacing: -0.5px;
+  line-height: 1;
   color: #0d1221;
 }
 
-.searchField input {
+.headerCount {
+  font-size: 13px;
+  color: #9998a3;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.searchWrap {
+  position: relative;
+  flex: 1;
+  max-width: 380px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9998a3;
+  pointer-events: none;
+}
+
+.searchInput {
   width: 100%;
   border: 1px solid rgba(13, 18, 33, 0.1);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.88);
-  padding: 14px 16px;
-  font-size: 15px;
-  line-height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 10px 16px 10px 40px;
+  font-size: 14px;
+  line-height: 22px;
   color: #0d1221;
+  transition: border-color 0.15s;
 }
 
-.refreshButton,
+.searchInput:focus {
+  outline: none;
+  border-color: rgba(13, 18, 33, 0.25);
+}
+
+.searchInput::placeholder {
+  color: #b5b4be;
+}
+
+.refreshButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(13, 18, 33, 0.1);
+  background: #ffffff;
+  color: #5b5a66;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.refreshButton:hover {
+  color: #0d1221;
+  border-color: rgba(13, 18, 33, 0.2);
+}
+
+.createButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  background: linear-gradient(180deg, #2e2937 0%, #161425 100%);
+  color: #ffffff;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.createButton:hover {
+  opacity: 0.85;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
 .primaryAction,
 .secondaryAction {
   display: inline-flex;
@@ -47,7 +138,6 @@
   line-height: 20px;
 }
 
-.refreshButton,
 .secondaryAction {
   border: 1px solid rgba(13, 18, 33, 0.1);
   background: #ffffff;
@@ -59,20 +149,9 @@
   color: #ffffff;
 }
 
-.summaryRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.summaryRow p,
 .inlineLink {
   font-size: 14px;
   line-height: 22px;
-}
-
-.inlineLink {
   color: #f75c30;
   font-weight: 600;
 }
@@ -196,6 +275,42 @@
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 18px;
+}
+
+.codexButton,
+.claudeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.codexButton:hover,
+.claudeButton:hover {
+  opacity: 0.82;
+}
+
+.codexButton {
+  border: 1px solid rgba(13, 18, 33, 0.12);
+  background: #f7f6f4;
+  color: #0d1221;
+}
+
+.claudeButton {
+  border: 1px solid rgba(247, 92, 48, 0.18);
+  background: rgba(247, 92, 48, 0.06);
+  color: #c94a20;
+}
+
+.buttonCopied {
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .emptyState {

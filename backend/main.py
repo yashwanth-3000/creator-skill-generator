@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+import logging
 import shutil
+import sys
 
 import uvicorn
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s:%(name)s: %(message)s",
+    stream=sys.stdout,
+)
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -363,6 +371,7 @@ def health():
         "service": settings.app_name,
         "version": "1.0.0",
     }
+
 
 
 # ---------------------------------------------------------------------------

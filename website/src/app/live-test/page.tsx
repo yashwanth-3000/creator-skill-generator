@@ -242,27 +242,21 @@ export default function LiveTestPage() {
 
       const decoder = new TextDecoder();
       let buffer = "";
+      let eventType = "log";
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        let eventType = "log";
+      const processLines = (lines: string[]) => {
         for (const line of lines) {
           if (line.startsWith("event: ")) {
             eventType = line.slice(7).trim();
           } else if (line.startsWith("data: ")) {
             const jsonStr = line.slice(6);
-            if (eventType === "ping") continue;
+            if (eventType === "ping") { eventType = "log"; continue; }
             try {
               const data = JSON.parse(jsonStr) as Record<string, unknown>;
 
               if (eventType === "done") {
                 setStatus("done");
+                eventType = "log";
                 continue;
               }
 
@@ -272,12 +266,14 @@ export default function LiveTestPage() {
                   message: `Skill "${data.skill_name}" generated with ${(data.files as unknown[])?.length ?? 0} files`,
                   elapsed: data.elapsed ?? 0,
                 });
+                eventType = "log";
                 continue;
               }
 
               if (eventType === "error") {
                 addLog("error", { type: "error", ...data });
                 setStatus("error");
+                eventType = "log";
                 continue;
               }
 
@@ -297,6 +293,20 @@ export default function LiveTestPage() {
             eventType = "log";
           }
         }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        processLines(lines);
+      }
+
+      if (buffer.trim()) {
+        processLines(buffer.split("\n"));
       }
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
@@ -311,7 +321,7 @@ export default function LiveTestPage() {
   }
 
   return (
-    <AppFrame currentPage="live-test">
+    <AppFrame>
       <div className={styles.main}>
         <div className={styles.header}>
           <p className={styles.kicker}>Live test</p>

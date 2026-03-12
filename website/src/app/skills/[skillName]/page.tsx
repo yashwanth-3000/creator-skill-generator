@@ -39,41 +39,6 @@ export default async function SkillDetailPage({ params }: SkillDetailPageProps) 
   return (
     <AppFrame currentPage="skills">
       <div className={styles.page}>
-        <section className={styles.hero}>
-          <div className={styles.heroCard}>
-            <p className={styles.kicker}>Skill detail</p>
-            <h1 className={styles.title}>{skillName}</h1>
-            <p className={styles.lead}>
-              Inspect the generated bundle, preview individual files, install the skill
-              into Codex or Claude Code, or remove it from the database.
-            </p>
-
-            <div className={styles.chipRow}>
-              <span className={styles.chip}>File preview</span>
-              <span className={styles.chip}>Install to Codex / Claude</span>
-              <span className={styles.chip}>Delete bundle</span>
-            </div>
-          </div>
-
-          <aside className={styles.sideCard}>
-            <p className={styles.kicker}>Skill operations</p>
-            <h2 className={styles.sideCardTitle}>Bundle operations</h2>
-            <p className={styles.sideCardLead}>
-              Preview files, copy content, install to Codex or Claude Code, or delete
-              the skill from the database.
-            </p>
-
-            <div className={styles.sideList}>
-              {detailNotes.map((note) => (
-                <div key={note.endpoint} className={styles.sideItem}>
-                  <code>{note.endpoint}</code>
-                  <span>{note.detail}</span>
-                </div>
-              ))}
-            </div>
-          </aside>
-        </section>
-
         <section className={styles.content}>
           <SkillDetail skillName={skillName} />
         </section>

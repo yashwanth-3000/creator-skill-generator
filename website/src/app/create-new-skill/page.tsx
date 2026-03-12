@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function CreateNewSkillPage() {
   return (
-    <AppFrame currentPage="create" hideFooter>
+    <AppFrame currentPage="create">
       <CreateSkillWizard />
     </AppFrame>
   );
