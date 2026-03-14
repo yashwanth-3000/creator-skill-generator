@@ -1,16 +1,29 @@
 # Creator Skill Generator
 
-Creator Skill Generator is a backend-first project for generating reusable Agent Skills from creator content.
+Creator Skill Generator turns creator content into reusable AI skills.
 
-The goal is not to generate a random prompt. The goal is to generate a reusable `SKILL.md`-centered package that can be used by skills-compatible tools such as Codex and Claude Code.
+It analyzes material from Twitter/X, YouTube, or personal writing, identifies the recurring tone, structure, and constraints behind that content, and converts those patterns into portable `SKILL.md`-centered bundles that can be used in tools like Codex and Claude Code.
 
-This repository currently includes:
+Creators can generate multiple skills for different writing styles and reuse the right one without re-explaining the voice every time.
+
+I built this after running into the same problem during content creation: getting AI to sound consistent meant rewriting the same style instructions again and again until the tone finally matched. This project was built for the hackathon to replace that repeated prompting with reusable creator skills that can be generated once and reused across sessions.
+
+To make sure the backend workflows behaved reliably, I used TestSprite to test the API flows and catch errors, edge cases, and integration issues during development. That feedback loop helped harden the generation pipeline and improve endpoint reliability.
+
+## Demo
+
+- Live Demo: [creator-skill-generator.vercel.app](https://creator-skill-generator.vercel.app)
+- Demo Video: [YouTube walkthrough](https://youtu.be/VQdmyS9Zhng)
+
+## Repository Overview
+
+This repository includes:
 
 - a unified FastAPI backend in [`backend/`](backend/)
 - two earlier backend snapshots in [`backend/workflow-1/`](backend/workflow-1/) and [`backend/workflow-2/`](backend/workflow-2/)
-- a Next.js website shell in [`website/`](website/)
+- a full Next.js website in [`website/`](website/)
 
-The backend is the real product today. The website is currently a landing page and is not yet wired to the backend APIs.
+The website and backend now work together as one product: the frontend handles the live generation experience, and the backend produces the reusable skill bundles.
 
 ## What A Skill Is
 
@@ -99,7 +112,7 @@ The generated bundle is centered around:
 - optional `agents/openai.yaml`
 - a portable folder or zip export
 
-There is also a Next.js website in this repository, but the main functional part of the project today is the backend generation pipeline.
+The repository also includes a finished Next.js frontend that connects to the backend, guides users through generation, and supports bundle review and export flows.
 
 ## Built-In Skill Creators Vs This Project
 
@@ -193,15 +206,14 @@ It is also a reference snapshot now. Its functionality has been merged into the 
 
 ### 4. Website
 
-[`website/`](website/) is a Next.js frontend shell.
+[`website/`](website/) is the Next.js frontend for the project.
 
-Right now it is primarily:
+It now includes:
 
-- a branded landing page
-- a design / presentation layer
-- a future integration surface
-
-It is not yet wired to the backend API.
+- the marketing site and product narrative
+- backend-connected generation flows
+- bundle preview and export interactions
+- the live demo experience deployed on Vercel
 
 ## Generated Skill Package Shape
 
