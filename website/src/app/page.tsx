@@ -6,7 +6,7 @@ import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import styles from "./page.module.css";
 import { SiteHeader } from "@/components/site-header";
 
-const DEMO_VIDEO_ID = "YU8FGGkDaqc";
+const DEMO_VIDEO_ID = "VQdmyS9Zhng";
 
 type WorkflowCard = {
   title: string;
